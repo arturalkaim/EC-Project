@@ -45,10 +45,10 @@ public class player13 implements ContestSubmission {
 
 		int evals = 0;
 		while (evals < evaluations_limit_) {
-			evaluation_.evaluate(new double[] { rnd_.nextDouble(),
-					rnd_.nextDouble(), rnd_.nextDouble(), rnd_.nextDouble(),
-					rnd_.nextDouble(), rnd_.nextDouble(), rnd_.nextDouble(),
-					rnd_.nextDouble(), rnd_.nextDouble(), rnd_.nextDouble() });
+			System.out.println(evaluation_.evaluate(new double[] { (rnd_.nextDouble()-0.5)*10 ,
+					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
+					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
+					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10 }));
 			// Select parents
 			// Apply variation operators and get children
 			// double child[] = ...
