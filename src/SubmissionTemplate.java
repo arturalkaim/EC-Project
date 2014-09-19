@@ -4,7 +4,7 @@ import org.vu.contest.ContestEvaluation;
 import java.util.Random;
 import java.util.Properties;
 
-public class SubmissionExample
+public class SubmissionTemplate
 {
 	Random rnd_;
 	ContestEvaluation evaluation_;
