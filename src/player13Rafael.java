@@ -42,6 +42,15 @@ public class player13Rafael implements ContestSubmission {
 		}
 	}
 
+	public TreeMap<Double, double[]> selectParents(TreeMap<Double, double[]> population){
+		//Sorted List
+		TreeMap<Double, double[]> selectedParents = new TreeMap<Double, double[]>();
+		
+		float topParents;
+		
+		
+		return selectedParents;
+	}
 	public void run() {
 		// Run your algorithm here
 		int popNumber = 100;
