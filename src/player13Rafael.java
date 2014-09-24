@@ -73,10 +73,14 @@ public class player13Rafael implements ContestSubmission {
 					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
 					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
 					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10 }; 
-			
-			population.put((Double) evaluation_.evaluate(newchild), newchild);
+			if( null != (Double) evaluation_.evaluate(newchild))
+				population.put((Double) evaluation_.evaluate(newchild), newchild);
+			else{
+				//System.out.println(pop);
+			}
+			pop++;
 		}
-		System.out.println(population);
+		//System.out.println(population);
 		
 		int evals = 0;
 		while (evals < evaluations_limit_) {
