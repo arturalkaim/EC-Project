@@ -1,6 +1,7 @@
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeMap;
@@ -10,7 +11,9 @@ import org.vu.contest.ContestSubmission;
 
 public class player13Artur implements ContestSubmission {
 	private static final Double MIN_VALUE = -10000d;
-	private static int MAX_POP = 10;
+	private static double PERC_BEST = 0.5;
+	private static float MUT_PER = 0.1f;
+	private static int MAX_POP = 150;
 	private Random rnd_;
 	private ContestEvaluation evaluation_;
 	private int evaluations_limit_;
@@ -49,56 +52,67 @@ public class player13Artur implements ContestSubmission {
 	public void run() {
 		// Run your algorithm here
 		TreeMap<Double, double[]> population = new TreeMap<Double, double[]>();
-		TreeMap<Double, double[]> children = new TreeMap<Double, double[]>();
+		ArrayList<double[]> children = new ArrayList<double[]>();
 		TreeMap<Double, double[]> parents = new TreeMap<Double, double[]>();
 		TreeMap<Double, double[]> aux = new TreeMap<Double, double[]>();
 
-		buildRandomPopulation(population);
+		buildRandomPopulation(population, true);
 
-		int evals = 0;
-		while (evals < 1000) {
+		System.out.println("POP " + population.descendingKeySet().headSet(0d));
+
+		int evals = MAX_POP;
+		boolean go = true;
+		while (evals < evaluations_limit_ && go) {
 			// System.out.println("GENERATION " + evals);
 			// Select parents
 			parents = selectParents(population, (double) evals);
 
 			// Apply variation operators and get children
+			children = new ArrayList<double[]>();
 			children = variate(parents);
 
-			population.putAll(children);
 			// double child[] = ...
 			// Double fitness = evaluation_.evaluate(child);
-			for (double[] p : population.values()) {
-				aux.put((Double) evaluation_.evaluate(p),p);
+			for (double[] p : children) {
+				Double val = (Double) evaluation_.evaluate(p);
+				if (val == null) {
+					go=false;
+					break;
+				}
 				
+				aux.put(val, p);
 				evals++;
 			}
 			// Select survivors
 			children.clear();
-			population.clear();
 			population.putAll(aux);
-			System.out.println("POP "+population.keySet());
-			System.out.println("EVALS:" + evals);
+			aux.clear();
+			if (evals % 10000 == 0)
+				System.out.println("POP "
+						+ population.descendingKeySet().headSet(0d));
+			// System.out.println("EVALS:" + evals);
 		}
 
 		System.out.println(evaluation_.getFinalResult());
 	}
 
-	private TreeMap<Double, double[]> variate(
-			TreeMap<Double, double[]> population) {
-		TreeMap<Double, double[]> aux = new TreeMap<Double, double[]>();
+	private ArrayList<double[]> variate(TreeMap<Double, double[]> population) {
+		ArrayList<double[]> aux = new ArrayList<double[]>();
 
-//		buildRandomPopulation(population);
-		if(population.size()%2!=0)
-			population.put(-500d,new double[] { (rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10,
-				(rnd_.nextDouble() - 0.5) * 10 });
+		// buildRandomPopulation(population);
+		if (population.size() % 2 != 0)
+			population.put(-500d, new double[] {
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10 });
+
 		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
 
 		while (it.hasNext()) {
@@ -106,56 +120,96 @@ public class player13Artur implements ContestSubmission {
 					.next();
 			Map.Entry<java.lang.Double, double[]> entry2 = (Map.Entry<java.lang.Double, double[]>) it
 					.next();
-
 			mate(entry1.getValue(), entry2.getValue(), aux);
 		}
 
-//		buildRandomPopulation(aux);
+		buildRandomKids(aux);
 		return aux;
 	}
 
-	private void mate(double[] ds, double[] ds2, TreeMap<Double, double[]> aux) {
-		System.out.println("Mate");
+	private void buildRandomKids(ArrayList<double[]> aux) {
+		for (; aux.size() < MAX_POP;) {
+			double[] aux1 = new double[] { (rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10 };
+			aux.add(aux1);
+		}
+	}
+
+	private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
 
 		int pivot = rnd_.nextInt(10);
 		double arr1[] = new double[10];
 		for (int i = 0; i < pivot; i++) {
 			arr1[i] = ds[i];
 		}
-		for (int i = pivot; i < 10; i++){
+		for (int i = pivot; i < 10; i++) {
 			arr1[i] = ds2[i];
 		}
-		System.out.println();
 		double arr2[] = new double[10];
 		for (int i = 0; i < pivot; i++)
 			arr2[i] = ds2[i];
 		for (int i = pivot; i < 10; i++)
 			arr2[i] = ds[i];
-		Double eval = (Double) evaluation_.evaluate(arr1);
-		Double eval2 = (Double) evaluation_.evaluate(arr2);
-		aux.put(eval, arr1);
-		aux.put(eval2, arr2);
+
+		mutation(arr1);
+		mutation(arr2);
+		
+		aux.add(arr1);
+		aux.add(arr2);
+	}
+
+	private void mutation(double[] arr) {
+		
+		if(rnd_.nextFloat()<MUT_PER){
+			
+			int from = rnd_.nextInt(10);
+			double aux = arr[from];
+			int to = rnd_.nextInt(10);
+			arr[from] = arr[to];
+			arr[to] = arr[from];
+			
+		}
+		
 	}
 
 	double sizeAux = -1;
+
 	private TreeMap<Double, double[]> selectParents(
 			TreeMap<Double, double[]> population, Double gen) {
-		
+
 		TreeMap<Double, double[]> aux = new TreeMap<Double, double[]>(
-				population.tailMap(sizeAux));
-		
-		
-		if(sizeAux<0)
-			sizeAux++;
-		
-		System.out.println(aux.keySet());
-		System.out.println("SIZE AUX: " + sizeAux);
-		
+				population.tailMap(0d));
+
+		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
+		sizeAux = aux.size();
+		if (sizeAux > 0) {
+			for (int i = aux.size(); i < MAX_POP * PERC_BEST && it.hasNext(); i++) {
+				Entry<Double, double[]> next = it.next();
+				aux.put(next.getKey(), next.getValue());
+			}
+			System.out.println(aux.descendingKeySet());
+			buildRandomPopulation(aux, false);
+			PERC_BEST+=0.05d;
+			MUT_PER=(float) (0.8f/sizeAux);
+		}
+
+		// System.out.println(aux.keySet());
+		// System.out.println("SIZE AUX: " + aux.size());
+
 		return aux;
 
 	}
 
-	private void buildRandomPopulation(TreeMap<Double, double[]> population) {
+	private void buildRandomPopulation(TreeMap<Double, double[]> population,
+			boolean eval) {
 		Double val = MIN_VALUE;
 		for (; population.size() < MAX_POP; val++) {
 			double[] aux = new double[] { (rnd_.nextDouble() - 0.5) * 10,
@@ -168,7 +222,11 @@ public class player13Artur implements ContestSubmission {
 					(rnd_.nextDouble() - 0.5) * 10,
 					(rnd_.nextDouble() - 0.5) * 10,
 					(rnd_.nextDouble() - 0.5) * 10 };
-			population.put(val, aux);
+			if (eval) {
+				population.put((Double) evaluation_.evaluate(aux), aux);
+			} else {
+				population.put(val, aux);
+			}
 		}
 
 	}
@@ -179,7 +237,7 @@ public class player13Artur implements ContestSubmission {
 		for (int i = 0; i < 1; i++) {
 			p13.setEvaluation(new SphereEvaluation());
 			p13.run();
-			
+
 		}
 
 	}
