@@ -11,8 +11,8 @@ import org.vu.contest.ContestSubmission;
 
 public class player13Artur implements ContestSubmission {
 	private static final Double MIN_VALUE = -10000d;
-	private static double PERC_BEST = 0.5;
-	private static float MUT_PER = 0.1f;
+	private static double PERC_BEST = 0.6;
+	private static float MUT_PER = 1f;
 	private static int MAX_POP = 150;
 	private Random rnd_;
 	private ContestEvaluation evaluation_;
@@ -76,10 +76,14 @@ public class player13Artur implements ContestSubmission {
 			for (double[] p : children) {
 				Double val = (Double) evaluation_.evaluate(p);
 				if (val == null) {
-					go=false;
+					go = false;
 					break;
 				}
-				
+				/*if (val > 7) {
+					for (double d : p)
+						System.out.print(d + " ");
+					System.out.println();
+				}*/
 				aux.put(val, p);
 				evals++;
 			}
@@ -87,9 +91,10 @@ public class player13Artur implements ContestSubmission {
 			children.clear();
 			population.putAll(aux);
 			aux.clear();
-			if (evals % 10000 == 0)
-				System.out.println("POP "
-						+ population.descendingKeySet().headSet(0d));
+			/*
+			 * if (evals % 10000 == 0) System.out.println("POP " +
+			 * population.descendingKeySet().headSet(0d));
+			 */
 			// System.out.println("EVALS:" + evals);
 		}
 
@@ -114,13 +119,17 @@ public class player13Artur implements ContestSubmission {
 					(rnd_.nextDouble() - 0.5) * 10 });
 
 		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
-
+		Map.Entry<java.lang.Double, double[]> entry1 = null;
+		if (it.hasNext())
+			entry1 = (Map.Entry<java.lang.Double, double[]>) it.next();
 		while (it.hasNext()) {
-			Map.Entry<java.lang.Double, double[]> entry1 = (Map.Entry<java.lang.Double, double[]>) it
-					.next();
 			Map.Entry<java.lang.Double, double[]> entry2 = (Map.Entry<java.lang.Double, double[]>) it
 					.next();
 			mate(entry1.getValue(), entry2.getValue(), aux);
+			if (it.hasNext())
+				entry1 = (Map.Entry<java.lang.Double, double[]>) it.next();
+			mate(entry2.getValue(), entry1.getValue(), aux);
+
 		}
 
 		buildRandomKids(aux);
@@ -161,23 +170,24 @@ public class player13Artur implements ContestSubmission {
 
 		mutation(arr1);
 		mutation(arr2);
-		
+
 		aux.add(arr1);
 		aux.add(arr2);
 	}
 
 	private void mutation(double[] arr) {
-		
-		if(rnd_.nextFloat()<MUT_PER){
-			
+
+		if (rnd_.nextFloat() < MUT_PER) {
+
 			int from = rnd_.nextInt(10);
 			double aux = arr[from];
 			int to = rnd_.nextInt(10);
 			arr[from] = arr[to];
 			arr[to] = arr[from];
-			
+			arr[rnd_.nextInt(10)] = (rnd_.nextFloat()-0.5f)*10;
+
 		}
-		
+
 	}
 
 	double sizeAux = -1;
@@ -195,10 +205,10 @@ public class player13Artur implements ContestSubmission {
 				Entry<Double, double[]> next = it.next();
 				aux.put(next.getKey(), next.getValue());
 			}
-			System.out.println(aux.descendingKeySet());
+			//System.out.println(aux.descendingKeySet());
 			buildRandomPopulation(aux, false);
-			PERC_BEST+=0.05d;
-			MUT_PER=(float) (0.8f/sizeAux);
+			PERC_BEST += 0.05d;
+			MUT_PER = (float) (2.8f / sizeAux);
 		}
 
 		// System.out.println(aux.keySet());
