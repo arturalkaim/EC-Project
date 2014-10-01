@@ -46,19 +46,12 @@ public class player13Rafael implements ContestSubmission {
 		}
 	}
 
-	public TreeMap<Double, double[]> selectParents(TreeMap<Double, double[]> population, double topParents){
+	public ArrayList<Individue> selectParents(ArrayList<Individue> population, double topParents){
 		//Sorted List
-		TreeMap<Double, double[]> selectedParents = new TreeMap<Double, double[]>();
+		ArrayList<Individue> selectedParents = new ArrayList<Individue>();
 		int parentsSelected = (int) (population.size()*topParents);
 		
-		//get the treeMap ordered by the greater to the lowest.
-		SortedMap<Double, double[]> aux = population.descendingMap();
-		//get the X greater fittness parents.
-		for(int i = 0; i < parentsSelected; i++){
-			Double keyAux = aux.firstKey();
-			selectedParents.put(keyAux, aux.get(keyAux));
-			aux = aux.tailMap(keyAux);
-		}
+
 		return selectedParents;
 	}
 	
@@ -66,7 +59,7 @@ public class player13Rafael implements ContestSubmission {
 		// Run your algorithm here
 		int popNumber = 100;
 		int pop=0;
-		TreeMap<Double, double[]> population  = new TreeMap<Double, double[]>();
+		ArrayList<Individue> population  = new ArrayList<Individue>();
 		double[] newchild;
 		while(pop < popNumber){
 		 newchild = new double[] { rnd_.nextDouble()-0.5*10,
@@ -74,7 +67,7 @@ public class player13Rafael implements ContestSubmission {
 					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
 					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10 }; 
 			if( null != (Double) evaluation_.evaluate(newchild))
-				population.put((Double) evaluation_.evaluate(newchild), newchild);
+				population.add(new Individue(newchild, ((Double) evaluation_.evaluate(newchild))));
 			else{
 				//System.out.println(pop);
 			}
@@ -85,7 +78,7 @@ public class player13Rafael implements ContestSubmission {
 		int evals = 0;
 		while (evals < evaluations_limit_) {
 			// Select parents
-			TreeMap<Double, double[]> result =  selectParents(population, 0.5);
+			ArrayList<Individue> result =  selectParents(population, 0.5);
 			System.out.println(result);
 			// Apply variation operators and get children
 			// double child[] = ...
@@ -97,6 +90,87 @@ public class player13Rafael implements ContestSubmission {
 		System.out.println(evaluation_.getFinalResult());
 	}
 
+	
+	/* private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+
+		int pivot = rnd_.nextInt(10);
+		int length = rnd_.nextInt(10-pivot);
+		
+		
+		double arr1[] = new double[10];
+		for (int i = 0; i < pivot; i++) {
+			arr1[i] = ds[i];
+		}
+		for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+			arr1[i] = ds2[i];
+		}
+		for (int i = pivot + length; i < 10; i++) {
+			arr1[i] = ds[i];
+		}
+
+		double arr2[] = new double[10];
+		for (int i = 0; i < pivot; i++)
+			arr2[i] = ds2[i];
+		for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+			arr2[i] = ds[i];
+		}
+		for (int i = pivot + length; i < 10; i++)
+			arr2[i] = ds2[i];
+
+		//mutation(arr1);
+		//mutation(arr2);
+
+		aux.add(arr1);
+		aux.add(arr2);
+	}*/
+	
+	/*private void mate2(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+		// a4 b2 b3 a1
+	int pivot = rnd_.nextInt(10);
+	int length = rnd_.nextInt(10-pivot);
+	
+	
+	double arr1[] = new double[10];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr1[i] = ds2[i];
+	}
+	for (int i = pivot + length; i < 10; i++) {
+		arr1[i] = ds[i-pivot-length];
+	}
+	for (int i = 0; i < pivot; i++) {
+		arr1[i] = ds[i];
+	}
+
+	double arr2[] = new double[10];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr2[i] = ds[i];
+	}	
+	for (int i = pivot + length; i < 10; i++)
+		arr2[i] = ds2[i-pivot-length];
+	for (int i = 0; i < pivot; i++)
+		arr2[i] = ds2[i];
+	mutation(arr1);
+	mutation(arr2);
+
+	aux.add(arr1);
+	aux.add(arr2);
+}*/
+	private static float MUT_PER = 1f;
+	private void mutation(double[] arr) {
+
+		if (rnd_.nextFloat() < MUT_PER) {
+
+			int from = rnd_.nextInt(10);
+			double aux = arr[from];
+			int to = rnd_.nextInt(10);
+			arr[from] = arr[to];
+			arr[to] = arr[from];
+			arr[rnd_.nextInt(10)] = (rnd_.nextFloat()-0.5f)*10;
+
+		}
+		System.out.println("IM HERE");
+	}
+	
 	public static void main(String[] args) {
 		player13Rafael p13 = new player13Rafael();
 
@@ -105,4 +179,5 @@ public class player13Rafael implements ContestSubmission {
 		p13.run();
 
 	}
+	
 }

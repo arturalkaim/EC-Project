@@ -90,6 +90,8 @@ public class player13 implements ContestSubmission {
 			// Select survivors
 			children.clear();
 			population.putAll(aux);
+			double x = (Double) population.keySet().toArray()[150];
+			population.tailMap(x); 
 			aux.clear();
 			/*
 			 * if (evals % 10000 == 0) System.out.println("POP " +
@@ -152,7 +154,7 @@ public class player13 implements ContestSubmission {
 		}
 	}
 
-	private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+	/*private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
 
 		int pivot = rnd_.nextInt(10);
 		double arr1[] = new double[10];
@@ -160,7 +162,7 @@ public class player13 implements ContestSubmission {
 			arr1[i] = ds[i];
 		}
 		for (int i = pivot; i < 10; i++) {
-			arr1[i] = ds2[i];
+			arr1[i] = ds2[i];mutation
 		}
 		double arr2[] = new double[10];
 		for (int i = 0; i < pivot; i++)
@@ -173,9 +175,73 @@ public class player13 implements ContestSubmission {
 
 		aux.add(arr1);
 		aux.add(arr2);
+	}*/
+	 private void mate1(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+	// a1 b2 b3 a4
+	int pivot = rnd_.nextInt(10);
+	int length = rnd_.nextInt(10-pivot);
+	
+	//System.out.println("IM HERE");
+	
+	double arr1[] = new double[10];
+	for (int i = 0; i < pivot; i++) {
+		arr1[i] = ds[i];
+	}
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr1[i] = ds2[i];
+	}
+	for (int i = pivot + length; i < 10; i++) {
+		arr1[i] = ds[i];
 	}
 
-	private void mutation(double[] arr) {
+	double arr2[] = new double[10];
+	for (int i = 0; i < pivot; i++)
+		arr2[i] = ds2[i];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr2[i] = ds[i];
+	}
+	for (int i = pivot + length; i < 10; i++)
+		arr2[i] = ds2[i];
+
+	mutation(arr1);
+	mutation(arr2);
+
+	aux.add(arr1);
+	aux.add(arr2);
+}
+
+	private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+		// a4 b2 b3 a1
+	int pivot = rnd_.nextInt(10);
+	int length = rnd_.nextInt(10-pivot);
+	//System.out.println("IM HERE");
+	
+	double arr1[] = new double[10];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr1[i] = ds2[i];
+	}
+	for (int i = pivot + length; i < 10; i++) {
+		arr1[i] = ds[i-pivot-length];
+	}
+	for (int i = 0; i < pivot; i++) {
+		arr1[i] = ds[i];
+	}
+
+	double arr2[] = new double[10];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr2[i] = ds[i];
+	}	
+	for (int i = pivot + length; i < 10; i++)
+		arr2[i] = ds2[i-pivot-length];
+	for (int i = 0; i < pivot; i++)
+		arr2[i] = ds2[i];
+	mutation(arr1);
+	mutation(arr2);
+
+	aux.add(arr1);
+	aux.add(arr2);
+}
+	/*private void mutation(double[] arr) {
 
 		if (rnd_.nextFloat() < MUT_PER) {
 
@@ -188,6 +254,26 @@ public class player13 implements ContestSubmission {
 
 		}
 
+	}*/
+	private void mutation(double[] arr) {
+		double x = 0.5;
+		double[] aux = new double[] { rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x};
+		
+		for(int i = 0; i <10; i++){
+			if(rnd_.nextDouble() > 0.9)
+				arr[i] += aux[i];
+		}
+		//System.out.println(aux);
+
 	}
 
 	double sizeAux = -1;
@@ -195,8 +281,7 @@ public class player13 implements ContestSubmission {
 	private TreeMap<Double, double[]> selectParents(
 			TreeMap<Double, double[]> population, Double gen) {
 
-		TreeMap<Double, double[]> aux = new TreeMap<Double, double[]>(
-				population.tailMap(0d));
+		TreeMap<Double, double[]> aux = population;
 
 		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
 		sizeAux = aux.size();
@@ -243,9 +328,9 @@ public class player13 implements ContestSubmission {
 
 	public static void main(String[] args) {
 		player13 p13 = new player13();
-
 		for (int i = 0; i < 1; i++) {
 			p13.setEvaluation(new SphereEvaluation());
+			//p13.setSeed(1);
 			p13.run();
 
 		}
