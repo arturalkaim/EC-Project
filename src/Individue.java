@@ -1,5 +1,6 @@
 
-public class Individue {
+
+public class Individue{
 	double[] gen;
 	Double fitness;
 	int rank;
@@ -31,5 +32,11 @@ public class Individue {
 	public void setRank(int rank) {
 		this.rank = rank;
 	}
+
+/*	@Override
+	public int compareTo(Object o) {
+		// TODO Auto-generated method stub
+		return 0;
+	}*/
 	
 }

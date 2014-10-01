@@ -152,7 +152,7 @@ public class player13Artur implements ContestSubmission {
 		}
 	}
 
-	private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+	/*private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
 
 		int pivot = rnd_.nextInt(10);
 		double arr1[] = new double[10];
@@ -173,8 +173,71 @@ public class player13Artur implements ContestSubmission {
 
 		aux.add(arr1);
 		aux.add(arr2);
+	}*/
+	/* private void mate1(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+	// a1 b2 b3 a4
+	int pivot = rnd_.nextInt(10);
+	int length = rnd_.nextInt(10-pivot);
+	
+	
+	double arr1[] = new double[10];
+	for (int i = 0; i < pivot; i++) {
+		arr1[i] = ds[i];
+	}
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr1[i] = ds2[i];
+	}
+	for (int i = pivot + length; i < 10; i++) {
+		arr1[i] = ds[i];
 	}
 
+	double arr2[] = new double[10];
+	for (int i = 0; i < pivot; i++)
+		arr2[i] = ds2[i];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr2[i] = ds[i];
+	}
+	for (int i = pivot + length; i < 10; i++)
+		arr2[i] = ds2[i];
+
+	//mutation(arr1);
+	//mutation(arr2);
+
+	aux.add(arr1);
+	aux.add(arr2);
+}*/
+
+	private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+		// a4 b2 b3 a1
+	int pivot = rnd_.nextInt(10);
+	int length = rnd_.nextInt(10-pivot);
+	
+	//System.out.println("IM HERE");
+	double arr1[] = new double[10];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr1[i] = ds2[i];
+	}
+	for (int i = pivot + length; i < 10; i++) {
+		arr1[i] = ds[i-pivot-length];
+	}
+	for (int i = 0; i < pivot; i++) {
+		arr1[i] = ds[i];
+	}
+
+	double arr2[] = new double[10];
+	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+		arr2[i] = ds[i];
+	}	
+	for (int i = pivot + length; i < 10; i++)
+		arr2[i] = ds2[i-pivot-length];
+	for (int i = 0; i < pivot; i++)
+		arr2[i] = ds2[i];
+	mutation(arr1);
+	mutation(arr2);
+
+	aux.add(arr1);
+	aux.add(arr2);
+}
 	private void mutation(double[] arr) {
 
 		if (rnd_.nextFloat() < MUT_PER) {
@@ -189,6 +252,26 @@ public class player13Artur implements ContestSubmission {
 		}
 
 	}
+	private void mutation2(double[] arr) {
+		double x = 0.5;
+		double[] aux = new double[] { rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x,
+				rnd_.nextGaussian()*x};
+		for(int i = 0; i <10; i++){
+			arr[i] += aux[i];
+		}
+
+	}
+	
+	
+	
 
 	double sizeAux = -1;
 
@@ -196,7 +279,38 @@ public class player13Artur implements ContestSubmission {
 			TreeMap<Double, double[]> population, Double gen) {
 
 		TreeMap<Double, double[]> aux = new TreeMap<Double, double[]>(
-				population.tailMap(0d));
+				/* private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+
+				int pivot = rnd_.nextInt(10);
+				int length = rnd_.nextInt(10-pivot);
+				
+				
+				double arr1[] = new double[10];
+				for (int i = 0; i < pivot; i++) {
+					arr1[i] = ds[i];
+				}
+				for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+					arr1[i] = ds2[i];
+				}
+				for (int i = pivot + length; i < 10; i++) {
+					arr1[i] = ds[i];
+				}
+
+				double arr2[] = new double[10];
+				for (int i = 0; i < pivot; i++)
+					arr2[i] = ds2[i];
+				for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+					arr2[i] = ds[i];
+				}
+				for (int i = pivot + length; i < 10; i++)
+					arr2[i] = ds2[i];
+
+				//mutation(arr1);
+				//mutation(arr2);
+
+				aux.add(arr1);
+				aux.add(arr2);
+			}*/		population.tailMap(0d));
 
 		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
 		sizeAux = aux.size();
