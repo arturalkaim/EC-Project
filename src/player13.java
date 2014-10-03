@@ -21,12 +21,11 @@ public class player13 implements ContestSubmission {
 	boolean hasStructure;
 	boolean isSeparable;
 
-	double sigma = 5;
-	double ds_0 = 1;
+	double sigma = 1;
+	double ds_0 = 0.5;
 	double ds;
 
 	int MAX_POP;
-	private boolean separable;
 
 	public player13() {
 		rnd_ = new Random();
@@ -53,13 +52,10 @@ public class player13 implements ContestSubmission {
 		if (isMultimodal) {
 			MAX_POP = 100;
 		} else {
-			MAX_POP = 50;
+			MAX_POP = 100;
 		}
-		if (isSeparable) {
-			separable = true;
-		} else {
-			separable = false;
-		}
+		
+		ds = ds_0;
 	}
 
 	private ArrayList<Individue> CreatePopulation(int max) {
@@ -88,7 +84,7 @@ public class player13 implements ContestSubmission {
 
 	private void rankPopulation(ArrayList<Individue> popu) {
 		Double low = Double.MAX_VALUE, high = Double.MIN_VALUE;
-		double interval = 5.0;
+		double interval = 10.0;
 
 		for (Individue i : popu) {
 
@@ -108,7 +104,7 @@ public class player13 implements ContestSubmission {
 
 			for (int k = 0; k < interval; k++) {
 
-				if (low + step * k <= fit && fit <= low + step * (k + 1))
+				if (low + step * k <= fit && fit < low + step * (k + 1))
 					j.setRank(k + 1);
 
 			}
@@ -122,13 +118,10 @@ public class player13 implements ContestSubmission {
 		ArrayList<Individue> parents = new ArrayList<Individue>();
 		ArrayList<Double> prob = CalcProb(popu);
 
-
 		int mu = popu.size();
-		// double r = rnd_.nextDouble()/mu;
+		
+		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = rnd_.nextInt(mu)) {
 
-		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = (i + 1) % mu) {
-
-			// System.out.println("START");
 			double r = rnd_.nextDouble();
 			if (r < prob.get(i)) {
 
@@ -138,7 +131,6 @@ public class player13 implements ContestSubmission {
 				j++;
 
 			}
-			// System.out.println("END " + r + "   " + prob.get(i));
 
 		}
 
@@ -165,14 +157,17 @@ public class player13 implements ContestSubmission {
 
 			j++;
 		}
+		
 		double total = 0d;
-//		System.out.println("Total= " + total + " c = " + c + " PROB: " + prob);
+		
 		// normalize
 		for (int k = 0; k < prob.size(); k++) {
 
 			prob.set(k, prob.get(k) / c);
 			total += prob.get(k);
 		}
+
+		// System.out.println("Total= "+ total+" PROB: "+prob);
 
 		return prob;
 	}
@@ -214,9 +209,7 @@ public class player13 implements ContestSubmission {
 
 		}
 
-		if (sigma < 0)
-			sigma = Math.abs(sigma);
-		if (2 * succes / parents.size() >= 0.3)
+		if (2*succes / parents.size() >= 0.2)
 			sigma += ds;
 		else
 			sigma -= ds;
@@ -228,31 +221,16 @@ public class player13 implements ContestSubmission {
 	private double[] Mate(Individue parent1, Individue parent2) {
 
 		double[] child = new double[10];
-		if (true/*!separable*/) {
-			int pivot = rnd_.nextInt(10);
-			int length = rnd_.nextInt(10 - pivot);
 
-			// System.out.println("IM HERE");
-			for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-				child[i] = parent2.getGen()[i];
-			}
-			for (int i = pivot + length; i < 10; i++) {
-				child[i] = parent1.getGen()[i - pivot - length];
-			}
-			for (int i = 0; i < pivot; i++) {
+		for (int i = 0; i < parent1.getGen().length; i++) {
+			int r = rnd_.nextInt(2);
+
+			if (r == 0)
 				child[i] = parent1.getGen()[i];
-			}
+			if (r == 1)
+				child[i] = parent2.getGen()[i];
 
-		} else
-			for (int i = 0; i < parent1.getGen().length; i++) {
-				int r = rnd_.nextInt(2);
-
-				if (r == 0)
-					child[i] = parent1.getGen()[i];
-				if (r == 1)
-					child[i] = parent2.getGen()[i];
-
-			}
+		}
 
 		return child;
 	}
@@ -262,18 +240,15 @@ public class player13 implements ContestSubmission {
 
 		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
 		newpopu.addAll(children);
-		// combine popu and children list
-		// remove members with roulette based on rank/fitness
-		// never remove highest fitness (elitism)
-
+		
 		Collections.sort(newpopu, new Comparator<Individue>() {
 
 			@Override
 			public int compare(Individue o1, Individue o2) {
-				double d = o1.getFitness() - o2.getFitness();
-				if (d < 0)
+				double d = o1.getFitness()-o2.getFitness();
+				if(d<0)
 					return -1;
-				if (d == 0)
+				if(d==0)
 					return 0;
 				else
 					return 1;
@@ -282,9 +257,8 @@ public class player13 implements ContestSubmission {
 		});
 
 		ds -= (ds_0 - 0.01) / evaluations_limit_;
-
-		return new ArrayList<Individue>(newpopu.subList(newpopu.size()
-				- MAX_POP - 1, newpopu.size()));
+		
+		return new ArrayList<Individue>(newpopu.subList(newpopu.size()-MAX_POP-1, newpopu.size()));
 	}
 
 	private double[] Mutate(double[] child) {
@@ -309,59 +283,29 @@ public class player13 implements ContestSubmission {
 
 	public void run() {
 
-		ds = ds_0;
-
 		ArrayList<Individue> Population_List = CreatePopulation(MAX_POP);
 		// System.out.println("end");
 
 		boolean go = true;
-		for (int evals = MAX_POP; evals < evaluations_limit_ && go; evals += (2 * (MAX_POP + 1))) {
+		for (int evals = MAX_POP; evals < evaluations_limit_  && go; evals += (2 * (MAX_POP + 1))) {
+
 			// System.out.println("Population_List.size= "+Population_List.size());
 			ArrayList<Individue> parents = SelectParents(Population_List);
 			ArrayList<Individue> children = createChildren(parents);
 			Population_List = nextGeneration(Population_List, children);
-			calcAverage(Population_List);
-			
-			if (evaluation_.getFinalResult()==10d) {
-				return;
-			}
 
 		}
-		System.out.println("Sigma= " + sigma);
-		// System.out.println("FinalResult= " + evaluation_.getFinalResult());
 
-	}
+		System.out.println("FinalResult= " + evaluation_.getFinalResult());
 
-	private Double calcAverage(ArrayList<Individue> population_List) {
-		Double average = 0d;
-		int cont = 0;
-		for (Individue i : population_List) {
-			average += i.getFitness();
-			cont++;
-		}
-		average = average/cont;
-		System.out.println("Average = " + average);
-		return average;
 	}
 
 	public static void main(String[] args) {
 		player13 p13 = new player13();
-		Double best = 0d;
-		Double lowest = 11d;
-		Double result = 0d;
-		final int runs = 10;
-		for (int i = 0; i < runs; i++) {
-			p13.setEvaluation(new SphereEvaluation());
-			p13.run();
-			Double res = p13.evaluation_.getFinalResult();
-			if (res > best)
-				best = res;
-			if (res < lowest)
-				lowest = res;
-			result += res;
-			System.out.println("END");
-		}
-		System.out.println("Average = " + result / runs + " Best = " + best
-				+ " Lowest = " + lowest);
+
+		p13.setEvaluation(new SphereEvaluation());
+
+		p13.run();
+
 	}
 }

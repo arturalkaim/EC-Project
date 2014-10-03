@@ -21,8 +21,8 @@ public class player13alex implements ContestSubmission {
 	boolean hasStructure;
 	boolean isSeparable;
 
-	double sigma = 1;
-	double ds_0 = 1;
+	double sigma;
+	double ds_0;
 	double ds;
 
 	int MAX_POP;
@@ -50,10 +50,26 @@ public class player13alex implements ContestSubmission {
 
 		// Change settings(?)
 		if (isMultimodal) {
-			//
-		} else {
-			// Do sth else
+			MAX_POP = 100;
+			sigma = 1;
+			ds_0 = 0.5;
+		}else{
+			MAX_POP = 100;
+			sigma = 1;
+			ds_0 = 0.5;
 		}
+		
+		if (hasStructure){
+		
+		}
+		
+		if (isSeparable){
+			
+		}
+		
+		ds = ds_0;
+		
+		
 	}
 
 	private ArrayList<Individue> CreatePopulation(int max) {
@@ -82,7 +98,7 @@ public class player13alex implements ContestSubmission {
 
 	private void rankPopulation(ArrayList<Individue> popu) {
 		Double low = Double.MAX_VALUE, high = Double.MIN_VALUE;
-		double interval = 5.0;
+		double interval = 10.0;
 
 		for (Individue i : popu) {
 
@@ -117,9 +133,8 @@ public class player13alex implements ContestSubmission {
 		ArrayList<Double> prob = CalcProb(popu);
 
 		int mu = popu.size();
-		// double r = rnd_.nextDouble()/mu;
-
-		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = (i + 1) % mu) {
+		
+		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = rnd_.nextInt(mu)) {
 
 			double r = rnd_.nextDouble();
 			if (r < prob.get(i)) {
@@ -156,7 +171,9 @@ public class player13alex implements ContestSubmission {
 
 			j++;
 		}
+		
 		double total = 0d;
+		
 		// normalize
 		for (int k = 0; k < prob.size(); k++) {
 
@@ -173,6 +190,7 @@ public class player13alex implements ContestSubmission {
 
 		ArrayList<Individue> children = new ArrayList<Individue>();
 		int succes = 0;
+		int nosucces = 0;
 
 		for (int i = 0; i < parents.size() / 2; i++) {
 			Individue parent1 = parents.get(i);
@@ -192,8 +210,10 @@ public class player13alex implements ContestSubmission {
 			if (fm1 >= fc1) {
 				children.add(new Individue(mutant1, fm1));
 				succes++;
-			} else
+			} else{
 				children.add(new Individue(child1, fc1));
+				nosucces++;
+			}
 
 			double fc2 = (Double) evaluation_.evaluate(child2);
 			double fm2 = (Double) evaluation_.evaluate(mutant2);
@@ -201,16 +221,19 @@ public class player13alex implements ContestSubmission {
 			if (fm2 >= fc2) {
 				children.add(new Individue(mutant2, fm2));
 				succes++;
-			} else
+			} else{
 				children.add(new Individue(child2, fc2));
+				nosucces++;
+			}
 
 		}
 
-		if (2 * succes / parents.size() >= 0.2)
+		if (succes / parents.size() >= 0.2)
 			sigma += ds;
 		else
 			sigma -= ds;
 
+		System.out.println(succes/nosucces );
 		return children;
 
 	}
@@ -237,10 +260,7 @@ public class player13alex implements ContestSubmission {
 
 		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
 		newpopu.addAll(children);
-		// combine popu and children list
-		// remove members with roulette based on rank/fitness
-		// never remove highest fitness (elitism)
-
+		
 		Collections.sort(newpopu, new Comparator<Individue>() {
 
 			@Override
@@ -283,14 +303,11 @@ public class player13alex implements ContestSubmission {
 
 	public void run() {
 
-		ds = ds_0;
-		MAX_POP = 50;
-
 		ArrayList<Individue> Population_List = CreatePopulation(MAX_POP);
 		// System.out.println("end");
 
 		boolean go = true;
-		for (int evals = MAX_POP; evals < 100 && go; evals++) {
+		for (int evals = MAX_POP; evals < evaluations_limit_  && go; evals += (2 * (MAX_POP+1))) {
 
 			// System.out.println("Population_List.size= "+Population_List.size());
 			ArrayList<Individue> parents = SelectParents(Population_List);
