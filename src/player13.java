@@ -266,15 +266,19 @@ public class player13 implements ContestSubmission {
 		double[] mutant = new double[10];
 
 		for (int i = 0; i < child.length; i++) {
-
 			double dx = sigma * rnd_.nextGaussian();
-			mutant[i] = child[i] + dx;
-
-			if (mutant[i] > 5)
-				mutant[i] = 5;
-
-			if (mutant[i] < -5)
-				mutant[i] = -5;
+			if(rnd_.nextDouble() > 0.9){
+				mutant[i] = child[i] + dx;
+	
+				if (mutant[i] > 5)
+					mutant[i] = 5;
+	
+				if (mutant[i] < -5)
+					mutant[i] = -5;
+			}
+			else{
+				mutant[i] = child[i];
+			}
 
 		}
 
