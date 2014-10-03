@@ -52,14 +52,14 @@ public class player13alex implements ContestSubmission {
 		// Change settings(?)
 		if (isMultimodal) {
 			MAX_POP = 100;
-			sigma = 1;
-			ds_0 = 0.5;
-			nrank = 10.0;
+			sigma = 0.5;
+			ds_0 = 0.1;
+			nrank = 25.0;
 		}else{
 			MAX_POP = 100;
-			sigma = 1;
-			ds_0 = 0.5;
-			nrank = 10.0;
+			sigma = 0.5;
+			ds_0 = 0.1;
+			nrank = 25.0;
 		}
 		
 		if (hasStructure){
