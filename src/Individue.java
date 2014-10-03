@@ -33,6 +33,11 @@ public class Individue{
 		this.rank = rank;
 	}
 
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return new Integer(rank).toString();
+	}
 /*	@Override
 	public int compareTo(Object o) {
 		// TODO Auto-generated method stub

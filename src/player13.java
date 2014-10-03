@@ -1,3 +1,6 @@
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -10,13 +13,20 @@ import org.vu.contest.ContestEvaluation;
 import org.vu.contest.ContestSubmission;
 
 public class player13 implements ContestSubmission {
-	private static final Double MIN_VALUE = -10000d;
-	private static double PERC_BEST = 0.6;
-	private static float MUT_PER = 1f;
-	private static int MAX_POP = 150;
 	private Random rnd_;
 	private ContestEvaluation evaluation_;
 	private int evaluations_limit_;
+
+	boolean isMultimodal;
+	boolean hasStructure;
+	boolean isSeparable;
+
+	double sigma = 5;
+	double ds_0 = 1;
+	double ds;
+
+	int MAX_POP;
+	private boolean separable;
 
 	public player13() {
 		rnd_ = new Random();
@@ -34,82 +44,30 @@ public class player13 implements ContestSubmission {
 		// Get evaluation properties
 		Properties props = evaluation.getProperties();
 		evaluations_limit_ = Integer.parseInt(props.getProperty("Evaluations"));
-		boolean isMultimodal = Boolean.parseBoolean(props
-				.getProperty("Multimodal"));
-		boolean hasStructure = Boolean.parseBoolean(props
+		isMultimodal = Boolean.parseBoolean(props.getProperty("Multimodal"));
+		hasStructure = Boolean.parseBoolean(props
 				.getProperty("GlobalStructure"));
-		boolean isSeparable = Boolean.parseBoolean(props
-				.getProperty("Separable"));
+		isSeparable = Boolean.parseBoolean(props.getProperty("Separable"));
 
 		// Change settings(?)
 		if (isMultimodal) {
-			// Do sth
+			MAX_POP = 100;
 		} else {
-			// Do sth else
+			MAX_POP = 50;
+		}
+		if (isSeparable) {
+			separable = true;
+		} else {
+			separable = false;
 		}
 	}
 
-	public void run() {
-		// Run your algorithm here
-		TreeMap<Double, double[]> population = new TreeMap<Double, double[]>();
-		ArrayList<double[]> children = new ArrayList<double[]>();
-		TreeMap<Double, double[]> parents = new TreeMap<Double, double[]>();
-		TreeMap<Double, double[]> aux = new TreeMap<Double, double[]>();
+	private ArrayList<Individue> CreatePopulation(int max) {
 
-		buildRandomPopulation(population, true);
+		ArrayList<Individue> popu = new ArrayList<Individue>();
 
-		System.out.println("POP " + population.descendingKeySet().headSet(0d));
-
-		int evals = MAX_POP;
-		boolean go = true;
-		while (evals < evaluations_limit_ && go) {
-			// System.out.println("GENERATION " + evals);
-			// Select parents
-			parents = selectParents(population, (double) evals);
-
-			// Apply variation operators and get children
-			children = new ArrayList<double[]>();
-			children = variate(parents);
-
-			// double child[] = ...
-			// Double fitness = evaluation_.evaluate(child);
-			for (double[] p : children) {
-				Double val = (Double) evaluation_.evaluate(p);
-				if (val == null) {
-					go = false;
-					break;
-				}
-				/*if (val > 7) {
-					for (double d : p)
-						System.out.print(d + " ");
-					System.out.println();
-				}*/
-				aux.put(val, p);
-				evals++;
-			}
-			// Select survivors
-			children.clear();
-			population.putAll(aux);
-			double x = (Double) population.keySet().toArray()[150];
-			population.tailMap(x); 
-			aux.clear();
-			/*
-			 * if (evals % 10000 == 0) System.out.println("POP " +
-			 * population.descendingKeySet().headSet(0d));
-			 */
-			// System.out.println("EVALS:" + evals);
-		}
-
-		System.out.println(evaluation_.getFinalResult());
-	}
-
-	private ArrayList<double[]> variate(TreeMap<Double, double[]> population) {
-		ArrayList<double[]> aux = new ArrayList<double[]>();
-
-		// buildRandomPopulation(population);
-		if (population.size() % 2 != 0)
-			population.put(-500d, new double[] {
-					(rnd_.nextDouble() - 0.5) * 10,
+		for (; popu.size() < max;) {
+			double[] aux = (new double[] { (rnd_.nextDouble() - 0.5) * 10,
 					(rnd_.nextDouble() - 0.5) * 10,
 					(rnd_.nextDouble() - 0.5) * 10,
 					(rnd_.nextDouble() - 0.5) * 10,
@@ -120,220 +78,290 @@ public class player13 implements ContestSubmission {
 					(rnd_.nextDouble() - 0.5) * 10,
 					(rnd_.nextDouble() - 0.5) * 10 });
 
-		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
-		Map.Entry<java.lang.Double, double[]> entry1 = null;
-		if (it.hasNext())
-			entry1 = (Map.Entry<java.lang.Double, double[]>) it.next();
-		while (it.hasNext()) {
-			Map.Entry<java.lang.Double, double[]> entry2 = (Map.Entry<java.lang.Double, double[]>) it
-					.next();
-			mate(entry1.getValue(), entry2.getValue(), aux);
-			if (it.hasNext())
-				entry1 = (Map.Entry<java.lang.Double, double[]>) it.next();
-			mate(entry2.getValue(), entry1.getValue(), aux);
+			Double mem = (Double) evaluation_.evaluate(aux);
+			popu.add(new Individue(aux, mem));
+			// System.out.println(mem);
+		}
+
+		return popu;
+	}
+
+	private void rankPopulation(ArrayList<Individue> popu) {
+		Double low = Double.MAX_VALUE, high = Double.MIN_VALUE;
+		double interval = 5.0;
+
+		for (Individue i : popu) {
+
+			Double fit = i.getFitness();
+			if (fit < low)
+				low = fit;
+			if (fit > high)
+				high = fit;
 
 		}
 
-		buildRandomKids(aux);
-		return aux;
-	}
+		double step = (high - low) / interval;
 
-	private void buildRandomKids(ArrayList<double[]> aux) {
-		for (; aux.size() < MAX_POP;) {
-			double[] aux1 = new double[] { (rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10 };
-			aux.add(aux1);
-		}
-	}
+		for (Individue j : popu) {
 
-	/*private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+			Double fit = j.getFitness();
 
-		int pivot = rnd_.nextInt(10);
-		double arr1[] = new double[10];
-		for (int i = 0; i < pivot; i++) {
-			arr1[i] = ds[i];
-		}
-		for (int i = pivot; i < 10; i++) {
-			arr1[i] = ds2[i];mutation
-		}
-		double arr2[] = new double[10];
-		for (int i = 0; i < pivot; i++)
-			arr2[i] = ds2[i];
-		for (int i = pivot; i < 10; i++)
-			arr2[i] = ds[i];
+			for (int k = 0; k < interval; k++) {
 
-		mutation(arr1);
-		mutation(arr2);
+				if (low + step * k <= fit && fit <= low + step * (k + 1))
+					j.setRank(k + 1);
 
-		aux.add(arr1);
-		aux.add(arr2);
-	}*/
-	 private void mate1(double[] ds, double[] ds2, ArrayList<double[]> aux) {
-	// a1 b2 b3 a4
-	int pivot = rnd_.nextInt(10);
-	int length = rnd_.nextInt(10-pivot);
-	
-	//System.out.println("IM HERE");
-	
-	double arr1[] = new double[10];
-	for (int i = 0; i < pivot; i++) {
-		arr1[i] = ds[i];
-	}
-	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-		arr1[i] = ds2[i];
-	}
-	for (int i = pivot + length; i < 10; i++) {
-		arr1[i] = ds[i];
-	}
-
-	double arr2[] = new double[10];
-	for (int i = 0; i < pivot; i++)
-		arr2[i] = ds2[i];
-	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-		arr2[i] = ds[i];
-	}
-	for (int i = pivot + length; i < 10; i++)
-		arr2[i] = ds2[i];
-
-	mutation(arr1);
-	mutation(arr2);
-
-	aux.add(arr1);
-	aux.add(arr2);
-}
-
-	private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
-		// a4 b2 b3 a1
-	int pivot = rnd_.nextInt(10);
-	int length = rnd_.nextInt(10-pivot);
-	//System.out.println("IM HERE");
-	
-	double arr1[] = new double[10];
-	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-		arr1[i] = ds2[i];
-	}
-	for (int i = pivot + length; i < 10; i++) {
-		arr1[i] = ds[i-pivot-length];
-	}
-	for (int i = 0; i < pivot; i++) {
-		arr1[i] = ds[i];
-	}
-
-	double arr2[] = new double[10];
-	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-		arr2[i] = ds[i];
-	}	
-	for (int i = pivot + length; i < 10; i++)
-		arr2[i] = ds2[i-pivot-length];
-	for (int i = 0; i < pivot; i++)
-		arr2[i] = ds2[i];
-	mutation(arr1);
-	mutation(arr2);
-
-	aux.add(arr1);
-	aux.add(arr2);
-}
-	/*private void mutation(double[] arr) {
-
-		if (rnd_.nextFloat() < MUT_PER) {
-
-			int from = rnd_.nextInt(10);
-			double aux = arr[from];
-			int to = rnd_.nextInt(10);
-			arr[from] = arr[to];
-			arr[to] = arr[from];
-			arr[rnd_.nextInt(10)] = (rnd_.nextFloat()-0.5f)*10;
-
-		}
-
-	}*/
-	private void mutation(double[] arr) {
-		double x = 0.5;
-		double[] aux = new double[] { rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x,
-				rnd_.nextGaussian()*x};
-		
-		for(int i = 0; i <10; i++){
-			if(rnd_.nextDouble() > 0.9)
-				arr[i] += aux[i];
-		}
-		//System.out.println(aux);
-
-	}
-
-	double sizeAux = -1;
-
-	private TreeMap<Double, double[]> selectParents(
-			TreeMap<Double, double[]> population, Double gen) {
-
-		TreeMap<Double, double[]> aux = population;
-
-		Iterator<Entry<Double, double[]>> it = population.entrySet().iterator();
-		sizeAux = aux.size();
-		if (sizeAux > 0) {
-			for (int i = aux.size(); i < MAX_POP * PERC_BEST && it.hasNext(); i++) {
-				Entry<Double, double[]> next = it.next();
-				aux.put(next.getKey(), next.getValue());
-			}
-			//System.out.println(aux.descendingKeySet());
-			buildRandomPopulation(aux, false);
-			PERC_BEST += 0.05d;
-			MUT_PER = (float) (2.8f / sizeAux);
-		}
-
-		// System.out.println(aux.keySet());
-		// System.out.println("SIZE AUX: " + aux.size());
-
-		return aux;
-
-	}
-
-	private void buildRandomPopulation(TreeMap<Double, double[]> population,
-			boolean eval) {
-		Double val = MIN_VALUE;
-		for (; population.size() < MAX_POP; val++) {
-			double[] aux = new double[] { (rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10,
-					(rnd_.nextDouble() - 0.5) * 10 };
-			if (eval) {
-				population.put((Double) evaluation_.evaluate(aux), aux);
-			} else {
-				population.put(val, aux);
 			}
 		}
 
+	}
+
+	private ArrayList<Individue> SelectParents(ArrayList<Individue> popu) {
+
+		rankPopulation(popu);
+		ArrayList<Individue> parents = new ArrayList<Individue>();
+		ArrayList<Double> prob = CalcProb(popu);
+
+
+		int mu = popu.size();
+		// double r = rnd_.nextDouble()/mu;
+
+		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = (i + 1) % mu) {
+
+			// System.out.println("START");
+			double r = rnd_.nextDouble();
+			if (r < prob.get(i)) {
+
+				Individue mem = popu.get(i);
+				// System.out.println(mem.getFitness());
+				parents.add(j, mem);
+				j++;
+
+			}
+			// System.out.println("END " + r + "   " + prob.get(i));
+
+		}
+
+		return parents;
+
+	}
+
+	private ArrayList<Double> CalcProb(ArrayList<Individue> popu) {
+
+		ArrayList<Double> prob = new ArrayList<Double>();
+		double s = 1.5;
+		double c = 0;
+		int mu = popu.size();
+
+		int j = 0;
+		for (Individue ind : popu) {
+
+			double i = ind.getRank(); // or rank based
+
+			double p = 1 - Math.exp(-i);
+			c += p;
+
+			prob.add(j, p);
+
+			j++;
+		}
+		double total = 0d;
+//		System.out.println("Total= " + total + " c = " + c + " PROB: " + prob);
+		// normalize
+		for (int k = 0; k < prob.size(); k++) {
+
+			prob.set(k, prob.get(k) / c);
+			total += prob.get(k);
+		}
+
+		return prob;
+	}
+
+	private ArrayList<Individue> createChildren(ArrayList<Individue> parents) {
+
+		ArrayList<Individue> children = new ArrayList<Individue>();
+		int succes = 0;
+
+		for (int i = 0; i < parents.size() / 2; i++) {
+			Individue parent1 = parents.get(i);
+			Individue parent2 = parents.get(i + 1);
+
+			// create two children
+			double[] child1 = Mate(parent1, parent2);
+			double[] child2 = Mate(parent1, parent2);
+
+			// create two mutants
+			double[] mutant1 = Mutate(child1);
+			double[] mutant2 = Mutate(child2);
+
+			double fc1 = (Double) evaluation_.evaluate(child1);
+			double fm1 = (Double) evaluation_.evaluate(mutant1);
+
+			if (fm1 >= fc1) {
+				children.add(new Individue(mutant1, fm1));
+				succes++;
+			} else
+				children.add(new Individue(child1, fc1));
+
+			double fc2 = (Double) evaluation_.evaluate(child2);
+			double fm2 = (Double) evaluation_.evaluate(mutant2);
+
+			if (fm2 >= fc2) {
+				children.add(new Individue(mutant2, fm2));
+				succes++;
+			} else
+				children.add(new Individue(child2, fc2));
+
+		}
+
+		if (sigma < 0)
+			sigma = Math.abs(sigma);
+		if (2 * succes / parents.size() >= 0.3)
+			sigma += ds;
+		else
+			sigma -= ds;
+
+		return children;
+
+	}
+
+	private double[] Mate(Individue parent1, Individue parent2) {
+
+		double[] child = new double[10];
+		if (true/*!separable*/) {
+			int pivot = rnd_.nextInt(10);
+			int length = rnd_.nextInt(10 - pivot);
+
+			// System.out.println("IM HERE");
+			for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
+				child[i] = parent2.getGen()[i];
+			}
+			for (int i = pivot + length; i < 10; i++) {
+				child[i] = parent1.getGen()[i - pivot - length];
+			}
+			for (int i = 0; i < pivot; i++) {
+				child[i] = parent1.getGen()[i];
+			}
+
+		} else
+			for (int i = 0; i < parent1.getGen().length; i++) {
+				int r = rnd_.nextInt(2);
+
+				if (r == 0)
+					child[i] = parent1.getGen()[i];
+				if (r == 1)
+					child[i] = parent2.getGen()[i];
+
+			}
+
+		return child;
+	}
+
+	private ArrayList<Individue> nextGeneration(ArrayList<Individue> popu,
+			ArrayList<Individue> children) {
+
+		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
+		newpopu.addAll(children);
+		// combine popu and children list
+		// remove members with roulette based on rank/fitness
+		// never remove highest fitness (elitism)
+
+		Collections.sort(newpopu, new Comparator<Individue>() {
+
+			@Override
+			public int compare(Individue o1, Individue o2) {
+				double d = o1.getFitness() - o2.getFitness();
+				if (d < 0)
+					return -1;
+				if (d == 0)
+					return 0;
+				else
+					return 1;
+			}
+
+		});
+
+		ds -= (ds_0 - 0.01) / evaluations_limit_;
+
+		return new ArrayList<Individue>(newpopu.subList(newpopu.size()
+				- MAX_POP - 1, newpopu.size()));
+	}
+
+	private double[] Mutate(double[] child) {
+
+		double[] mutant = new double[10];
+
+		for (int i = 0; i < child.length; i++) {
+
+			double dx = sigma * rnd_.nextGaussian();
+			mutant[i] = child[i] + dx;
+
+			if (mutant[i] > 5)
+				mutant[i] = 5;
+
+			if (mutant[i] < -5)
+				mutant[i] = -5;
+
+		}
+
+		return mutant;
+	}
+
+	public void run() {
+
+		ds = ds_0;
+
+		ArrayList<Individue> Population_List = CreatePopulation(MAX_POP);
+		// System.out.println("end");
+
+		boolean go = true;
+		for (int evals = MAX_POP; evals < evaluations_limit_ && go; evals += (2 * (MAX_POP + 1))) {
+			// System.out.println("Population_List.size= "+Population_List.size());
+			ArrayList<Individue> parents = SelectParents(Population_List);
+			ArrayList<Individue> children = createChildren(parents);
+			Population_List = nextGeneration(Population_List, children);
+			calcAverage(Population_List);
+			
+			if (evaluation_.getFinalResult()==10d) {
+				return;
+			}
+
+		}
+		System.out.println("Sigma= " + sigma);
+		// System.out.println("FinalResult= " + evaluation_.getFinalResult());
+
+	}
+
+	private Double calcAverage(ArrayList<Individue> population_List) {
+		Double average = 0d;
+		int cont = 0;
+		for (Individue i : population_List) {
+			average += i.getFitness();
+			cont++;
+		}
+		average = average/cont;
+		System.out.println("Average = " + average);
+		return average;
 	}
 
 	public static void main(String[] args) {
 		player13 p13 = new player13();
-		for (int i = 0; i < 1; i++) {
+		Double best = 0d;
+		Double lowest = 11d;
+		Double result = 0d;
+		final int runs = 10;
+		for (int i = 0; i < runs; i++) {
 			p13.setEvaluation(new SphereEvaluation());
-			//p13.setSeed(1);
 			p13.run();
-
+			Double res = p13.evaluation_.getFinalResult();
+			if (res > best)
+				best = res;
+			if (res < lowest)
+				lowest = res;
+			result += res;
+			System.out.println("END");
 		}
-
+		System.out.println("Average = " + result / runs + " Best = " + best
+				+ " Lowest = " + lowest);
 	}
 }
