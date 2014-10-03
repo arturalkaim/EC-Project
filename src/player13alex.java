@@ -233,7 +233,7 @@ public class player13alex implements ContestSubmission {
 		else
 			sigma -= ds;
 
-		System.out.println(succes/nosucces );
+		//System.out.println(succes/nosucces);
 		return children;
 
 	}
@@ -307,7 +307,7 @@ public class player13alex implements ContestSubmission {
 		// System.out.println("end");
 
 		boolean go = true;
-		for (int evals = MAX_POP; evals < evaluations_limit_  && go; evals += (2 * (MAX_POP+1))) {
+		for (int evals = MAX_POP; evals < evaluations_limit_  && go; evals += 2*(MAX_POP)) {
 
 			// System.out.println("Population_List.size= "+Population_List.size());
 			ArrayList<Individue> parents = SelectParents(Population_List);
@@ -324,7 +324,7 @@ public class player13alex implements ContestSubmission {
 		player13alex p13 = new player13alex();
 
 		p13.setEvaluation(new SphereEvaluation());
-
+		
 		p13.run();
 
 	}
