@@ -24,6 +24,7 @@ public class player13alex implements ContestSubmission {
 	double sigma;
 	double ds_0;
 	double ds;
+	double nrank;
 
 	int MAX_POP;
 
@@ -53,10 +54,12 @@ public class player13alex implements ContestSubmission {
 			MAX_POP = 100;
 			sigma = 1;
 			ds_0 = 0.5;
+			nrank = 10.0;
 		}else{
 			MAX_POP = 100;
 			sigma = 1;
 			ds_0 = 0.5;
+			nrank = 10.0;
 		}
 		
 		if (hasStructure){
@@ -98,8 +101,7 @@ public class player13alex implements ContestSubmission {
 
 	private void rankPopulation(ArrayList<Individue> popu) {
 		Double low = Double.MAX_VALUE, high = Double.MIN_VALUE;
-		double interval = 10.0;
-
+		
 		for (Individue i : popu) {
 
 			Double fit = i.getFitness();
@@ -110,13 +112,13 @@ public class player13alex implements ContestSubmission {
 
 		}
 
-		double step = (high - low) / interval;
+		double step = (high - low) / nrank;
 
 		for (Individue j : popu) {
 
 			Double fit = j.getFitness();
 
-			for (int k = 0; k < interval; k++) {
+			for (int k = 0; k < nrank; k++) {
 
 				if (low + step * k <= fit && fit < low + step * (k + 1))
 					j.setRank(k + 1);
@@ -155,21 +157,41 @@ public class player13alex implements ContestSubmission {
 	private ArrayList<Double> CalcProb(ArrayList<Individue> popu) {
 
 		ArrayList<Double> prob = new ArrayList<Double>();
-		double s = 1.5;
 		double c = 0;
-		int mu = popu.size();
-
-		int j = 0;
-		for (Individue ind : popu) {
-
-			double i = ind.getRank(); // or rank based
-
-			double p = 1 - Math.exp(-i);
-			c += p;
-
-			prob.add(j, p);
-
-			j++;
+		
+		// multimodal functions
+		if(isMultimodal){
+			int j = 0;
+			double s = 1.5;
+			double mu = nrank;
+			
+			for(Individue ind : popu){
+			
+				double i = ind.getRank();
+				double p = ((2-s)/mu)+(2*i*(s-1)/(mu*(mu-1))); // lin prob function
+				
+				c += p;
+				
+				prob.add(j, p);
+				
+				j++;
+			}
+		}
+		
+		// unimodal functions
+		if(!isMultimodal){
+			int j = 0;
+			for (Individue ind : popu) {
+	
+				double i = ind.getRank(); 
+	
+				double p = 1 - Math.exp(-i);
+				c += p;
+	
+				prob.add(j, p);
+	
+				j++;
+			}
 		}
 		
 		double total = 0d;
