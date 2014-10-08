@@ -36,7 +36,7 @@ public class Individue{
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return new Integer(rank).toString();
+		return new Double(fitness).toString();
 	}
 /*	@Override
 	public int compareTo(Object o) {
