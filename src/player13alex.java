@@ -24,15 +24,17 @@ public class player13alex implements ContestSubmission {
 	double sigma;
 	double ds_0;
 	double ds;
+	double temp_0;
+	double temp;
 	double nrank;
 	double top_fit;
 
 	int MAX_POP;
 	
-	boolean f1 = false;
-	boolean f2 = false;
-	boolean f3 = false;
-
+	boolean f1;
+	boolean f2;
+	boolean f3;
+	
 	public player13alex() {
 		rnd_ = new Random();
 	}
@@ -51,28 +53,43 @@ public class player13alex implements ContestSubmission {
 		evaluations_limit_ = Integer.parseInt(props.getProperty("Evaluations"));
 		isMultimodal = Boolean.parseBoolean(props.getProperty("Multimodal"));
 		hasStructure = Boolean.parseBoolean(props
-				.getProperty("GlobalStructure"));
+				.getProperty("Regular"));
 		isSeparable = Boolean.parseBoolean(props.getProperty("Separable"));
 		
+		f1 = !isMultimodal;
+		f2 = isMultimodal&&!hasStructure;
+		f3 = isMultimodal&&hasStructure;
 		
 		// Change settings(?)
-		if (!isMultimodal) {
+		if (f1) {
 			MAX_POP = 200;
 			sigma = 0.5;
 			ds_0 = 0.25;
-			nrank = 25.0;
+			temp_0 = 17.4;
+			nrank = MAX_POP/2; 
 		}
 		
-		if(isMultimodal){
+		if(f2){
 			MAX_POP = 200;
-			sigma = 1;
-			ds_0 = 0.5;
-			nrank = 25.0;
+			sigma = 0.5;
+			ds_0 = 0.25;
+			temp_0 = 17.4;
+			nrank = MAX_POP/2;
 		}
+		
+		if(f3){
+			MAX_POP = 200;
+			sigma = 0.5;
+			ds_0 = 0.25;
+			temp_0 = 17.4;
+			nrank = MAX_POP/2;
+		}
+		
 		
 		
 		
 		ds = ds_0;
+		temp = temp_0;
 		
 		
 	}
@@ -170,7 +187,7 @@ public class player13alex implements ContestSubmission {
 			for(Individue ind : popu){
 			
 				double i = ind.getRank();
-				double p = ((2-s)/mu)+(2*i*(s-1)/(mu*(mu-1))); // lin prob function
+				double p = ((2-s)/mu)+(2*i*(s-1)/(mu*(mu-1))); // linear prob function
 				
 				c += p;
 				
@@ -187,7 +204,7 @@ public class player13alex implements ContestSubmission {
 	
 				double i = ind.getRank(); 
 	
-				double p = 1 - Math.exp(-i);
+				double p = 1 - Math.exp(-i); // exponential prob function
 				c += p;
 	
 				prob.add(j, p);
@@ -285,34 +302,48 @@ public class player13alex implements ContestSubmission {
 
 			double fc1 = (Double) evaluation_.evaluate(child1);
 			double fm1 = (Double) evaluation_.evaluate(mutant1);
-
-			if (fm1 >= fc1) {
-				children.add(new Individue(mutant1, fm1));
+			
+			
+			if(fm1 > fc1)
 				succes++;
+			
+			if (Math.exp((fm1-fc1)/temp) > rnd_.nextDouble()) {
+				children.add(new Individue(mutant1, fm1));
+				
 			} else{
 				children.add(new Individue(child1, fc1));
-				nosucces++;
+				
 			}
 
 			double fc2 = (Double) evaluation_.evaluate(child2);
 			double fm2 = (Double) evaluation_.evaluate(mutant2);
-
-			if (fm2 >= fc2) {
-				children.add(new Individue(mutant2, fm2));
+			
+			if(fm2 > fc2)
 				succes++;
+
+			if (Math.exp((fm2-fc2)/temp) < rnd_.nextDouble()) {
+				children.add(new Individue(mutant2, fm2));
+				
 			} else{
 				children.add(new Individue(child2, fc2));
-				nosucces++;
+				
 			}
+			
+			
 
 		}
+		
+		System.out.println(succes);
+		
 
-		if (succes / parents.size() >= 0.2)
+		if ((double) succes / parents.size() >= 0.2)
 			sigma += ds;
 		else
 			sigma -= ds;
+		
+		sigma = Math.abs(sigma);
 
-		//System.out.println(succes/nosucces);
+		System.out.println(sigma);
 		return children;
 
 	}
@@ -324,7 +355,9 @@ public class player13alex implements ContestSubmission {
 		for (int i = 0; i < parent1.getGen().length; i++) {
 			
 			// take variable random from each parent
-			if(true){
+			
+			
+			if(!f3){
 				double r = rnd_.nextDouble();
 	
 				if (r < 0.5)
@@ -334,11 +367,11 @@ public class player13alex implements ContestSubmission {
 			}
 			
 			// take average of variables
-			/*if(false){
+			if(f3){
 				
 				child[i] = (parent1.getGen()[i] + parent2.getGen()[i])/2;
 				
-			}*/
+			}
 
 		}
 
@@ -348,12 +381,9 @@ public class player13alex implements ContestSubmission {
 	private ArrayList<Individue> nextGeneration(ArrayList<Individue> popu,
 			ArrayList<Individue> children) {
 
-		// keep track of top fitness
-		top_fit = evaluation_.getFinalResult();
-		
 		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
 		newpopu.addAll(children);
-				
+		
 		Collections.sort(newpopu, new Comparator<Individue>() {
 
 			@Override
@@ -369,33 +399,41 @@ public class player13alex implements ContestSubmission {
 
 		});
 		
-		if(true){
+		//double mid_fit = newpopu.get((int) newpopu.size()*3/4-1).getFitness();
+		//System.out.println(mid_fit);
+		
+		if(isMultimodal){
 			rankPopulation(newpopu);
 			ArrayList<Double> prob = CalcProb2(newpopu); // calcprob2 gives inverse probability
-			System.out.println(top_fit);
+			
 			
 			int mu = newpopu.size();
-			for (int i = rnd_.nextInt(mu); mu > MAX_POP; i = rnd_.nextInt(mu)){
+			for (int i = rnd_.nextInt(mu); newpopu.size() > MAX_POP; i = rnd_.nextInt(mu)){
 			
 				Individue mem = newpopu.get(i);
 				double fit = mem.getFitness();
 				double r = rnd_.nextDouble();
+				//System.out.println(fit);
+				//System.out.println(mid_fit);
 				
-				if (r < prob.get(i) && fit != top_fit) {
-				
+				if(r < prob.get(i) && i != newpopu.size()-1){
+					
 					newpopu.remove(mem);
 					
 				}
 				
+				/*if (fit <= mid_fit) {
 				
-				mu = newpopu.size();
+					newpopu.remove(mem);
+					
+				}*/
+				
+				
 			}
 		
-			
-			
 		}
 		
-		if(false){
+		if(!isMultimodal){
 		
 			newpopu =  new ArrayList<Individue>(newpopu.subList(newpopu.size()-MAX_POP-1, newpopu.size()));
 			
@@ -432,7 +470,7 @@ public class player13alex implements ContestSubmission {
 	}
 
 	public void run() {
-
+		
 		ArrayList<Individue> Population_List = CreatePopulation(MAX_POP);
 		// System.out.println("end");
 
@@ -444,7 +482,8 @@ public class player13alex implements ContestSubmission {
 			ArrayList<Individue> children = createChildren(parents);
 			Population_List = nextGeneration(Population_List, children);
 			
-			ds = ds_0 - (ds_0 - 0.01)*(evals/evaluations_limit_);
+			ds = ds_0 - (ds_0 - 0.01)*((double) evals/evaluations_limit_);
+			temp = temp_0 - (temp_0 - 1.67)*((double) evals/evaluations_limit_);
 
 		}
 
