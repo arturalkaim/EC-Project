@@ -64,7 +64,7 @@ public class player13alex implements ContestSubmission {
 		if (f1) {
 			MAX_POP = 200;
 			sigma = 0.5;
-			ds_0 = 0.25;
+			ds_0 = 1.5;
 			temp_0 = 17.4;
 			nrank = MAX_POP/2; 
 		}
@@ -72,7 +72,7 @@ public class player13alex implements ContestSubmission {
 		if(f2){
 			MAX_POP = 200;
 			sigma = 0.5;
-			ds_0 = 0.25;
+			ds_0 = 1.5;
 			temp_0 = 17.4;
 			nrank = MAX_POP/2;
 		}
@@ -80,7 +80,7 @@ public class player13alex implements ContestSubmission {
 		if(f3){
 			MAX_POP = 200;
 			sigma = 0.5;
-			ds_0 = 0.25;
+			ds_0 = 1.5;
 			temp_0 = 17.4;
 			nrank = MAX_POP/2;
 		}
@@ -337,9 +337,9 @@ public class player13alex implements ContestSubmission {
 		
 
 		if ((double) succes / parents.size() >= 0.2)
-			sigma += ds;
+			sigma = sigma*ds;
 		else
-			sigma -= ds;
+			sigma -= sigma/ds;
 		
 		sigma = Math.abs(sigma);
 
@@ -482,7 +482,7 @@ public class player13alex implements ContestSubmission {
 			ArrayList<Individue> children = createChildren(parents);
 			Population_List = nextGeneration(Population_List, children);
 			
-			ds = ds_0 - (ds_0 - 0.01)*((double) evals/evaluations_limit_);
+			ds = ds_0 - (ds_0 - 1.001)*((double) evals/evaluations_limit_);
 			temp = temp_0 - (temp_0 - 1.67)*((double) evals/evaluations_limit_);
 
 		}
@@ -493,7 +493,7 @@ public class player13alex implements ContestSubmission {
 
 	public static void main(String[] args) {
 		player13alex p13 = new player13alex();
-
+		
 		p13.setEvaluation(new SphereEvaluation());
 		
 		p13.run();
