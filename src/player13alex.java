@@ -25,8 +25,13 @@ public class player13alex implements ContestSubmission {
 	double ds_0;
 	double ds;
 	double nrank;
+	double top_fit;
 
 	int MAX_POP;
+	
+	boolean f1 = false;
+	boolean f2 = false;
+	boolean f3 = false;
 
 	public player13alex() {
 		rnd_ = new Random();
@@ -48,27 +53,24 @@ public class player13alex implements ContestSubmission {
 		hasStructure = Boolean.parseBoolean(props
 				.getProperty("GlobalStructure"));
 		isSeparable = Boolean.parseBoolean(props.getProperty("Separable"));
-
+		
+		
 		// Change settings(?)
-		if (isMultimodal) {
-			MAX_POP = 100;
+		if (!isMultimodal) {
+			MAX_POP = 200;
 			sigma = 0.5;
-			ds_0 = 0.1;
-			nrank = 25.0;
-		}else{
-			MAX_POP = 100;
-			sigma = 0.5;
-			ds_0 = 0.1;
+			ds_0 = 0.25;
 			nrank = 25.0;
 		}
 		
-		if (hasStructure){
-		
+		if(isMultimodal){
+			MAX_POP = 200;
+			sigma = 1;
+			ds_0 = 0.5;
+			nrank = 25.0;
 		}
 		
-		if (isSeparable){
-			
-		}
+		
 		
 		ds = ds_0;
 		
@@ -207,7 +209,62 @@ public class player13alex implements ContestSubmission {
 
 		return prob;
 	}
+	
+	private ArrayList<Double> CalcProb2(ArrayList<Individue> popu) {
 
+		ArrayList<Double> prob = new ArrayList<Double>();
+		double c = 0;
+		
+		// multimodal functions
+		if(isMultimodal){
+			int j = 0;
+			double s = 1.5;
+			double mu = nrank;
+			
+			for(Individue ind : popu){
+			
+				double i = ind.getRank();
+				double p = ((2-s)/mu)+(2*(mu-i)*(s-1)/(mu*(mu-1))); // lin prob function
+				
+				c += p;
+				
+				prob.add(j, p);
+				
+				j++;
+			}
+		}
+		
+		// unimodal functions
+		if(!isMultimodal){
+			int j = 0;
+			for (Individue ind : popu) {
+	
+				double i = ind.getRank(); 
+	
+				double p = 1 - Math.exp(-(nrank-i));
+				c += p;
+	
+				prob.add(j, p);
+	
+				j++;
+			}
+		}
+		
+		double total = 0d;
+		
+		// normalize
+		for (int k = 0; k < prob.size(); k++) {
+
+			prob.set(k, prob.get(k) / c);
+			total += prob.get(k);
+		}
+
+		// System.out.println("Total= "+ total+" PROB: "+prob);
+
+		return prob;
+	}
+	
+	
 	private ArrayList<Individue> createChildren(ArrayList<Individue> parents) {
 
 		ArrayList<Individue> children = new ArrayList<Individue>();
@@ -265,12 +322,23 @@ public class player13alex implements ContestSubmission {
 		double[] child = new double[10];
 
 		for (int i = 0; i < parent1.getGen().length; i++) {
-			int r = rnd_.nextInt(2);
-
-			if (r == 0)
-				child[i] = parent1.getGen()[i];
-			if (r == 1)
-				child[i] = parent2.getGen()[i];
+			
+			// take variable random from each parent
+			if(true){
+				double r = rnd_.nextDouble();
+	
+				if (r < 0.5)
+					child[i] = parent1.getGen()[i];
+				if (r >= 0.5)
+					child[i] = parent2.getGen()[i];
+			}
+			
+			// take average of variables
+			/*if(false){
+				
+				child[i] = (parent1.getGen()[i] + parent2.getGen()[i])/2;
+				
+			}*/
 
 		}
 
@@ -280,9 +348,12 @@ public class player13alex implements ContestSubmission {
 	private ArrayList<Individue> nextGeneration(ArrayList<Individue> popu,
 			ArrayList<Individue> children) {
 
+		// keep track of top fitness
+		top_fit = evaluation_.getFinalResult();
+		
 		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
 		newpopu.addAll(children);
-		
+				
 		Collections.sort(newpopu, new Comparator<Individue>() {
 
 			@Override
@@ -297,10 +368,42 @@ public class player13alex implements ContestSubmission {
 			}
 
 		});
-
-		ds -= (ds_0 - 0.01) / evaluations_limit_;
 		
-		return new ArrayList<Individue>(newpopu.subList(newpopu.size()-MAX_POP-1, newpopu.size()));
+		if(true){
+			rankPopulation(newpopu);
+			ArrayList<Double> prob = CalcProb2(newpopu); // calcprob2 gives inverse probability
+			System.out.println(top_fit);
+			
+			int mu = newpopu.size();
+			for (int i = rnd_.nextInt(mu); mu > MAX_POP; i = rnd_.nextInt(mu)){
+			
+				Individue mem = newpopu.get(i);
+				double fit = mem.getFitness();
+				double r = rnd_.nextDouble();
+				
+				if (r < prob.get(i) && fit != top_fit) {
+				
+					newpopu.remove(mem);
+					
+				}
+				
+				
+				mu = newpopu.size();
+			}
+		
+			
+			
+		}
+		
+		if(false){
+		
+			newpopu =  new ArrayList<Individue>(newpopu.subList(newpopu.size()-MAX_POP-1, newpopu.size()));
+			
+		}
+		
+		
+		return newpopu;
+		
 	}
 
 	private double[] Mutate(double[] child) {
@@ -308,15 +411,20 @@ public class player13alex implements ContestSubmission {
 		double[] mutant = new double[10];
 
 		for (int i = 0; i < child.length; i++) {
-
-			double dx = sigma * rnd_.nextGaussian();
-			mutant[i] = child[i] + dx;
-
-			if (mutant[i] > 5)
-				mutant[i] = 5;
-
-			if (mutant[i] < -5)
-				mutant[i] = -5;
+			
+			// 20% chance of mutation for each variable
+			if(rnd_.nextDouble() < 0.2){
+				double dx = sigma * rnd_.nextGaussian();
+				mutant[i] = child[i] + dx;
+	
+				if (mutant[i] > 5)
+					mutant[i] = 5;
+	
+				if (mutant[i] < -5)
+					mutant[i] = -5;
+			}else{
+				mutant[i] = child[i];
+			}
 
 		}
 
@@ -335,6 +443,8 @@ public class player13alex implements ContestSubmission {
 			ArrayList<Individue> parents = SelectParents(Population_List);
 			ArrayList<Individue> children = createChildren(parents);
 			Population_List = nextGeneration(Population_List, children);
+			
+			ds = ds_0 - (ds_0 - 0.01)*(evals/evaluations_limit_);
 
 		}
 

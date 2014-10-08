@@ -11,7 +11,7 @@ import org.vu.contest.ContestEvaluation;
 public class SphereEvaluation implements ContestEvaluation 
 {
 	// Evaluations budget
-	private final static int EVALS_LIMIT_ = 30000+100;
+	private final static int EVALS_LIMIT_ = 2000+200;
 	// The base performance. It is derived by doing random search on the sphere function (see function method) with the same
 	//  amount of evaluations
 	private final static double BASE_ = 11.5356;
