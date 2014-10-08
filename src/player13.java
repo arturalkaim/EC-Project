@@ -29,6 +29,10 @@ public class player13 implements ContestSubmission {
 
 	int MAX_POP;
 
+	boolean f1 = false;
+	boolean f2 = false;
+	boolean f3 = false;
+	
 	public player13() {
 		rnd_ = new Random();
 	}
@@ -50,6 +54,10 @@ public class player13 implements ContestSubmission {
 				.getProperty("GlobalStructure"));
 		isSeparable = Boolean.parseBoolean(props.getProperty("Separable"));
 
+		f1 = !isMultimodal;
+		f2 = isMultimodal&&!hasStructure;
+		f3 = isMultimodal&&hasStructure;
+		
 		// Change settings(?)
 		if (isMultimodal) {
 			MAX_POP = 300;
