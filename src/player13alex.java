@@ -35,7 +35,7 @@ public class player13alex implements ContestSubmission {
 	}
 
 	public void setSeed(long seed) {
-		// Set seed of algortihms random process
+		// Set seed of algorithms random process
 		rnd_.setSeed(seed);
 	}
 
@@ -75,7 +75,7 @@ public class player13alex implements ContestSubmission {
 		
 		if(f3){
 			MAX_POP = 100;
-			sigma = 2; // higher mutation at the beginning
+			sigma = 0.5; 
 			ds_0 = 1.5;
 			temp_0 = 34.8; 
 			nrank = MAX_POP/2; 
@@ -231,7 +231,7 @@ public class player13alex implements ContestSubmission {
 		double c = 0;
 		
 		// multimodal functions
-		if(f2){
+		if(true){
 			int j = 0;
 			double s = 1.5;
 			double mu = nrank;
