@@ -58,9 +58,6 @@ public class player13alex implements ContestSubmission {
 		f2 = isMultimodal && !hasStructure;
 		f3 = isMultimodal && hasStructure;
 		
-		f1 = false;
-		f2 = true;
-
 		// Change settings(?)
 		if (f1) {
 			MAX_POP = 50;
