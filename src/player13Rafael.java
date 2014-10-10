@@ -1,20 +1,41 @@
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.vu.contest.ContestEvaluation;
 import org.vu.contest.ContestSubmission;
 
 public class player13Rafael implements ContestSubmission {
+	private static final double DISTANCE_TO_MUTATE = 1;
 	private Random rnd_;
 	private ContestEvaluation evaluation_;
 	private int evaluations_limit_;
+	
+	private int numberOfNichesFound = 0; 
+	
+	boolean isMultimodal;
+	boolean hasStructure;
+	boolean isSeparable;
 
+	double sigma;
+	double ds_0;
+	double ds;
+	double nrank;
+	double top_fit;
+
+	int MAX_POP;
+
+	boolean f1 = false;
+	boolean f2 = false;
+	boolean f3 = false;
+	
 	public player13Rafael() {
 		rnd_ = new Random();
 	}
@@ -31,153 +52,388 @@ public class player13Rafael implements ContestSubmission {
 		// Get evaluation properties
 		Properties props = evaluation.getProperties();
 		evaluations_limit_ = Integer.parseInt(props.getProperty("Evaluations"));
-		boolean isMultimodal = Boolean.parseBoolean(props
-				.getProperty("Multimodal"));
-		boolean hasStructure = Boolean.parseBoolean(props
+		isMultimodal = Boolean.parseBoolean(props.getProperty("Multimodal"));
+		hasStructure = Boolean.parseBoolean(props
 				.getProperty("GlobalStructure"));
-		boolean isSeparable = Boolean.parseBoolean(props
-				.getProperty("Separable"));
+		isSeparable = Boolean.parseBoolean(props.getProperty("Separable"));
 
+		f1 = !isMultimodal;
+		f2 = isMultimodal&&!hasStructure;
+		f3 = isMultimodal&&hasStructure;
+		
 		// Change settings(?)
 		if (isMultimodal) {
-			// Do sth
-		} else {
-			// Do sth else
+			MAX_POP = 300;
+			sigma = 1;
+			ds_0 = 0.5;
+			nrank = 25.0;
+		}else{
+			MAX_POP = 200;
+			sigma = 0.5;
+			ds_0 = 0.25;
+			nrank = 25.0;
 		}
-	}
-
-	public ArrayList<Individue> selectParents(ArrayList<Individue> population, double topParents){
-		//Sorted List
-		ArrayList<Individue> selectedParents = new ArrayList<Individue>();
-		int parentsSelected = (int) (population.size()*topParents);
 		
-
-		return selectedParents;
+		if (hasStructure){
+		
+		}
+		
+		if (isSeparable){
+			
+		}
+		
+		ds = ds_0;
+		
+		
 	}
-	
-	public void run() {
-		// Run your algorithm here
-		int popNumber = 100;
-		int pop=0;
-		ArrayList<Individue> population  = new ArrayList<Individue>();
-		double[] newchild;
-		while(pop < popNumber){
-		 newchild = new double[] { rnd_.nextDouble()-0.5*10,
-					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
-					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10,
-					(rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10, (rnd_.nextDouble()-0.5)*10 }; 
-			if( null != (Double) evaluation_.evaluate(newchild))
-				population.add(new Individue(newchild, ((Double) evaluation_.evaluate(newchild))));
-			else{
-				//System.out.println(pop);
+
+	private ArrayList<Individue> CreatePopulation(int max) {
+
+		ArrayList<Individue> popu = new ArrayList<Individue>();
+
+		for (; popu.size() < max;) {
+			double[] aux = (new double[] { (rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10,
+					(rnd_.nextDouble() - 0.5) * 10 });
+
+			Double mem = (Double) evaluation_.evaluate(aux);
+			popu.add(new Individue(aux, mem));
+			// System.out.println(mem);
+		}
+
+		return popu;
+	}
+
+	private void rankPopulation(ArrayList<Individue> popu) {
+		Double low = Double.MAX_VALUE, high = Double.MIN_VALUE;
+		
+		for (Individue i : popu) {
+
+			Double fit = i.getFitness();
+			if (fit < low)
+				low = fit;
+			if (fit > high)
+				high = fit;
+
+		}
+
+		double step = (high - low) / nrank;
+
+		for (Individue j : popu) {
+
+			Double fit = j.getFitness();
+
+			for (int k = 0; k < nrank; k++) {
+
+				if (low + step * k <= fit && fit < low + step * (k + 1))
+					j.setRank(k + 1);
+
 			}
-			pop++;
 		}
-		//System.out.println(population);
+
+	}
+
+	private ArrayList<Individue> SelectParents(ArrayList<Individue> popu) {
+
+		rankPopulation(popu);
+		ArrayList<Individue> parents = new ArrayList<Individue>();
+		ArrayList<Double> prob = CalcProb(popu);
+
+		int mu = popu.size();
 		
-		int evals = 0;
-		while (evals < evaluations_limit_) {
-			// Select parents
-			ArrayList<Individue> result =  selectParents(population, 0.5);
-			System.out.println(result);
-			// Apply variation operators and get children
-			// double child[] = ...
-			// Double fitness = evaluation_.evaluate(child);
-			evals++;
-			// Select survivors
+		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = rnd_.nextInt(mu)) {
+
+			double r = rnd_.nextDouble();
+			if (r < prob.get(i)) {
+
+				Individue mem = popu.get(i);
+				// System.out.println(mem.getFitness());
+				parents.add(j, mem);
+				j++;
+
+			}
+
 		}
 
-		System.out.println(evaluation_.getFinalResult());
+		return parents;
+
 	}
 
-	
-	/* private void mate(double[] ds, double[] ds2, ArrayList<double[]> aux) {
+	private ArrayList<Double> CalcProb(ArrayList<Individue> popu) {
 
-		int pivot = rnd_.nextInt(10);
-		int length = rnd_.nextInt(10-pivot);
+		ArrayList<Double> prob = new ArrayList<Double>();
+		double c = 0;
+		
+		// multimodal functions
+		if(isMultimodal){
+			int j = 0;
+			double s = 1.5;
+			double mu = nrank;
+			
+			for(Individue ind : popu){
+			
+				double i = ind.getRank();
+				double p = ((2-s)/mu)+(2*i*(s-1)/(mu*(mu-1))); // lin prob function
+				
+				c += p;
+				
+				prob.add(j, p);
+				
+				j++;
+			}
+		}
+		
+		// unimodal functions
+		if(!isMultimodal){
+			int j = 0;
+			for (Individue ind : popu) {
+	
+				double i = ind.getRank(); 
+	
+				double p = 1 - Math.exp(-i);
+				c += p;
+	
+				prob.add(j, p);
+	
+				j++;
+			}
+		}
+		
+		double total = 0d;
+		
+		// normalize
+		for (int k = 0; k < prob.size(); k++) {
+
+			prob.set(k, prob.get(k) / c);
+			total += prob.get(k);
+		}
+
+		// System.out.println("Total= "+ total+" PROB: "+prob);
+
+		return prob;
+	}
+
+	private boolean checkNiche(ArrayList<Individue> parents, double[] child1){
+		boolean result = false;
+		double distance = 0;
+		for(int i= 0; i< parents.size(); i++){
+			for(int j= 0; j < 10; j++){
+				distance += Math.pow( (child1[j] - parents.get(i).getGen()[j]), 2); 
+			}
+			distance = Math.sqrt(distance);
+			if(distance < 1){
+			System.out.println("distance is  "+distance);
+			}
+		if(distance < DISTANCE_TO_MUTATE){
+			result = true;
+			System.out.println("found it");
+			numberOfNichesFound++;
+			
+			break;
+			}
+		}
+		
+		return result;
+	}
+	private ArrayList<Individue> createChildren(ArrayList<Individue> parents) {
+
+		ArrayList<Individue> children = new ArrayList<Individue>();
+		int succes = 0;
+		int nosucces = 0;
+		ArrayList<Individue> everyone = new ArrayList<Individue>();
+		for (int i = 0; i < parents.size() / 2; i++) {
+			Individue parent1 = parents.get(i);
+			Individue parent2 = parents.get(i + 1);
+
+			// create two children
+			double[] child1 = Mate(parent1, parent2);
+			double[] child2 = Mate(parent1, parent2);
+
+			// create two mutants
+			double[] mutant1;
+			double[] mutant2;
+			
+			if(true){
+				everyone.addAll(children);
+				everyone.addAll(parents);
+				mutant1 = checkNiche(everyone, child1)?Mutate(child1) : Mutate(child1);
+				mutant2 = checkNiche(everyone, child2)?Mutate(child2) : Mutate(child2);
+				everyone.clear();
+			}
+			else{
+				mutant1 = Mutate(child1);
+				mutant2 =  Mutate(child2);
+			}
+			
+			double fc1 = (Double) evaluation_.evaluate(child1);
+			double fm1 = (Double) evaluation_.evaluate(mutant1);
+
+			if (fm1 >= fc1) {
+				children.add(new Individue(mutant1, fm1));
+				succes++;
+			} else{
+				children.add(new Individue(child1, fc1));
+				nosucces++;
+			}
+
+			double fc2 = (Double) evaluation_.evaluate(child2);
+			double fm2 = (Double) evaluation_.evaluate(mutant2);
+
+			if (fm2 >= fc2) {
+				children.add(new Individue(mutant2, fm2));
+				succes++;
+			} else{
+				children.add(new Individue(child2, fc2));
+				nosucces++;
+			}
+
+		}
+
+		if (succes / parents.size() >= 0.2)
+			sigma += ds;
+		else
+			sigma -= ds;
+
+		//System.out.println(succes/nosucces);
+		return children;
+
+	}
+
+	private double[] Mate(Individue parent1, Individue parent2) {
+
+		double[] child = new double[10];
+
+		for (int i = 0; i < parent1.getGen().length; i++) {
+			
+			// take variable random from each parent
+			if(!isSeparable){
+				double r = rnd_.nextDouble();
+	
+				if (r < 0.5)
+					child[i] = parent1.getGen()[i];
+				if (r >= 0.5)
+					child[i] = parent2.getGen()[i];
+			}
+			
+			// take average of variables
+			if(isSeparable){
+				
+				child[i] = (parent1.getGen()[i] + parent2.getGen()[i])/2;
+				
+			}
+
+		}
+
+		return child;
+	}
+
+	private ArrayList<Individue> nextGeneration(ArrayList<Individue> popu,
+			ArrayList<Individue> children) {
+
+		// keep track of top fitness
+		top_fit = evaluation_.getFinalResult();
+		
+		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
+		newpopu.addAll(children);
+		
+		Collections.sort(newpopu, new Comparator<Individue>() {
+
+			@Override
+			public int compare(Individue o1, Individue o2) {
+				double d = o1.getFitness()-o2.getFitness();
+				if(d<0)
+					return -1;
+				if(d==0)
+					return 0;
+				else
+					return 1;
+			}
+
+		});
+		
+		/*rankPopulation(newpopu);
+		ArrayList<Double> prob = CalcProb(newpopu);
+		
+		int mu = newpopu.size();
+		for (int i = rnd_.nextInt(mu); newpopu.size() > MAX_POP; i = rnd_.nextInt(mu)){
+		
+			double fit = newpopu.get(i).getFitness();
+			double r = rnd_.nextDouble();
+			
+			if (r < prob.get(i) && fit != top_fit) {
+				
+				
+			}
+			
+			
+			mu = newpopu.size();
+		}*/
 		
 		
-		double arr1[] = new double[10];
-		for (int i = 0; i < pivot; i++) {
-			arr1[i] = ds[i];
-		}
-		for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-			arr1[i] = ds2[i];
-		}
-		for (int i = pivot + length; i < 10; i++) {
-			arr1[i] = ds[i];
-		}
+		
 
-		double arr2[] = new double[10];
-		for (int i = 0; i < pivot; i++)
-			arr2[i] = ds2[i];
-		for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-			arr2[i] = ds[i];
-		}
-		for (int i = pivot + length; i < 10; i++)
-			arr2[i] = ds2[i];
-
-		//mutation(arr1);
-		//mutation(arr2);
-
-		aux.add(arr1);
-		aux.add(arr2);
-	}*/
-	
-	/*private void mate2(double[] ds, double[] ds2, ArrayList<double[]> aux) {
-		// a4 b2 b3 a1
-	int pivot = rnd_.nextInt(10);
-	int length = rnd_.nextInt(10-pivot);
-	
-	
-	double arr1[] = new double[10];
-	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-		arr1[i] = ds2[i];
-	}
-	for (int i = pivot + length; i < 10; i++) {
-		arr1[i] = ds[i-pivot-length];
-	}
-	for (int i = 0; i < pivot; i++) {
-		arr1[i] = ds[i];
+		return new ArrayList<Individue>(newpopu.subList(newpopu.size()-MAX_POP-1, newpopu.size()));
 	}
 
-	double arr2[] = new double[10];
-	for (int i = pivot, j = 1; i < 10 && j < length; i++, j++) {
-		arr2[i] = ds[i];
-	}	
-	for (int i = pivot + length; i < 10; i++)
-		arr2[i] = ds2[i-pivot-length];
-	for (int i = 0; i < pivot; i++)
-		arr2[i] = ds2[i];
-	mutation(arr1);
-	mutation(arr2);
+	private double[] Mutate(double[] child) {
 
-	aux.add(arr1);
-	aux.add(arr2);
-}*/
-	private static float MUT_PER = 1f;
-	private void mutation(double[] arr) {
+		double[] mutant = new double[10];
 
-		if (rnd_.nextFloat() < MUT_PER) {
-
-			int from = rnd_.nextInt(10);
-			double aux = arr[from];
-			int to = rnd_.nextInt(10);
-			arr[from] = arr[to];
-			arr[to] = arr[from];
-			arr[rnd_.nextInt(10)] = (rnd_.nextFloat()-0.5f)*10;
+		for (int i = 0; i < child.length; i++) {
+			
+			// 20% chance of mutation for each variable
+			if(rnd_.nextDouble() < 0.2){
+				double dx = sigma * rnd_.nextGaussian();
+				mutant[i] = child[i] + dx;
+	
+				if (mutant[i] > 5)
+					mutant[i] = 5;
+	
+				if (mutant[i] < -5)
+					mutant[i] = -5;
+			}else{
+				mutant[i] = child[i];
+			}
 
 		}
-		System.out.println("IM HERE");
+
+		return mutant;
 	}
-	
+
+	public void run() {
+
+		ArrayList<Individue> Population_List = CreatePopulation(MAX_POP);
+		// System.out.println("end");
+
+		boolean go = true;
+		for (int evals = MAX_POP; evals < evaluations_limit_  && go; evals += 2*(MAX_POP)) {
+
+			// System.out.println("Population_List.size= "+Population_List.size());
+			ArrayList<Individue> parents = SelectParents(Population_List);
+			ArrayList<Individue> children = createChildren(parents);
+			Population_List = nextGeneration(Population_List, children);
+			
+			ds = ds_0 - (ds_0 - 0.01)*(evals/evaluations_limit_);
+
+		}
+		System.out.println("number of niches found " + numberOfNichesFound);
+		System.out.println("FinalResult= " + evaluation_.getFinalResult());
+
+	}
+
 	public static void main(String[] args) {
 		player13Rafael p13 = new player13Rafael();
 
 		p13.setEvaluation(new SphereEvaluation());
-
+		
 		p13.run();
 
 	}
-	
 }
