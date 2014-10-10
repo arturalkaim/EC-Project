@@ -13,13 +13,13 @@ import org.vu.contest.ContestEvaluation;
 import org.vu.contest.ContestSubmission;
 
 public class player13Rafael implements ContestSubmission {
-	private static final double DISTANCE_TO_MUTATE = 1;
+	private static final double DISTANCE_TO_MUTATE = 3;
 	private Random rnd_;
 	private ContestEvaluation evaluation_;
 	private int evaluations_limit_;
-	
-	private int numberOfNichesFound = 0; 
-	
+
+	private int numberOfNichesFound = 0;
+
 	boolean isMultimodal;
 	boolean hasStructure;
 	boolean isSeparable;
@@ -35,7 +35,7 @@ public class player13Rafael implements ContestSubmission {
 	boolean f1 = false;
 	boolean f2 = false;
 	boolean f3 = false;
-	
+
 	public player13Rafael() {
 		rnd_ = new Random();
 	}
@@ -58,33 +58,32 @@ public class player13Rafael implements ContestSubmission {
 		isSeparable = Boolean.parseBoolean(props.getProperty("Separable"));
 
 		f1 = !isMultimodal;
-		f2 = isMultimodal&&!hasStructure;
-		f3 = isMultimodal&&hasStructure;
-		
+		f2 = isMultimodal && !hasStructure;
+		f3 = isMultimodal && hasStructure;
+
 		// Change settings(?)
 		if (isMultimodal) {
 			MAX_POP = 300;
 			sigma = 1;
 			ds_0 = 0.5;
 			nrank = 25.0;
-		}else{
+		} else {
 			MAX_POP = 200;
 			sigma = 0.5;
 			ds_0 = 0.25;
 			nrank = 25.0;
 		}
-		
-		if (hasStructure){
-		
+
+		if (hasStructure) {
+
 		}
-		
-		if (isSeparable){
-			
+
+		if (isSeparable) {
+
 		}
-		
+
 		ds = ds_0;
-		
-		
+
 	}
 
 	private ArrayList<Individue> CreatePopulation(int max) {
@@ -113,7 +112,7 @@ public class player13Rafael implements ContestSubmission {
 
 	private void rankPopulation(ArrayList<Individue> popu) {
 		Double low = Double.MAX_VALUE, high = Double.MIN_VALUE;
-		
+
 		for (Individue i : popu) {
 
 			Double fit = i.getFitness();
@@ -147,7 +146,7 @@ public class player13Rafael implements ContestSubmission {
 		ArrayList<Double> prob = CalcProb(popu);
 
 		int mu = popu.size();
-		
+
 		for (int j = 0, i = rnd_.nextInt(mu); j < mu; i = rnd_.nextInt(mu)) {
 
 			double r = rnd_.nextDouble();
@@ -170,44 +169,46 @@ public class player13Rafael implements ContestSubmission {
 
 		ArrayList<Double> prob = new ArrayList<Double>();
 		double c = 0;
-		
+
 		// multimodal functions
-		if(isMultimodal){
+		if (isMultimodal) {
 			int j = 0;
 			double s = 1.5;
 			double mu = nrank;
-			
-			for(Individue ind : popu){
-			
+
+			for (Individue ind : popu) {
+
 				double i = ind.getRank();
-				double p = ((2-s)/mu)+(2*i*(s-1)/(mu*(mu-1))); // lin prob function
-				
+				double p = ((2 - s) / mu) + (2 * i * (s - 1) / (mu * (mu - 1))); // lin
+																					// prob
+																					// function
+
 				c += p;
-				
+
 				prob.add(j, p);
-				
+
 				j++;
 			}
 		}
-		
+
 		// unimodal functions
-		if(!isMultimodal){
+		if (!isMultimodal) {
 			int j = 0;
 			for (Individue ind : popu) {
-	
-				double i = ind.getRank(); 
-	
+
+				double i = ind.getRank();
+
 				double p = 1 - Math.exp(-i);
 				c += p;
-	
+
 				prob.add(j, p);
-	
+
 				j++;
 			}
 		}
-		
+
 		double total = 0d;
-		
+
 		// normalize
 		for (int k = 0; k < prob.size(); k++) {
 
@@ -220,28 +221,46 @@ public class player13Rafael implements ContestSubmission {
 		return prob;
 	}
 
-	private boolean checkNiche(ArrayList<Individue> parents, double[] child1){
+	private boolean checkNiche(ArrayList<Individue> parents, double[] child1) {
 		boolean result = false;
+		boolean skip = false;
+		int counter = 0;
 		double distance = 0;
-		for(int i= 0; i< parents.size(); i++){
-			for(int j= 0; j < 10; j++){
-				distance += Math.pow( (child1[j] - parents.get(i).getGen()[j]), 2); 
+		for (int i = 0; i < parents.size(); i++) {
+			for (int j = 0; j < 10; j++) {
+				distance += Math.pow((child1[j] - parents.get(i).getGen()[j]),
+						2);
 			}
 			distance = Math.sqrt(distance);
-			if(distance < 1){
-			System.out.println("distance is  "+distance);
+			if (distance < 3) {
+				System.out.println("distance is  " + distance);
 			}
-		if(distance < DISTANCE_TO_MUTATE){
-			result = true;
-			System.out.println("found it");
-			numberOfNichesFound++;
-			
-			break;
+			if (distance < DISTANCE_TO_MUTATE) { // bigger value
+				System.out.println("found a wider niche");
+				numberOfNichesFound++;
+				if (!skip){
+					if(counter == 5) // some random value, we allow 5 in the bigger niche, Ĩf we find one more we mutate the children. 
+						skip = true;
+					counter++;
+				}
+				else{
+					result = true;
+					break;
+				}
+				// break;
+			}
+			if (distance < DISTANCE_TO_MUTATE / 2) { // small value
+				result = true;
+				System.out.println("found it");
+				numberOfNichesFound++;
+				break;
+
 			}
 		}
-		
+
 		return result;
 	}
+
 	private ArrayList<Individue> createChildren(ArrayList<Individue> parents) {
 
 		ArrayList<Individue> children = new ArrayList<Individue>();
@@ -259,26 +278,27 @@ public class player13Rafael implements ContestSubmission {
 			// create two mutants
 			double[] mutant1;
 			double[] mutant2;
-			
-			if(true){
+
+			if (f1 || f2) {
 				everyone.addAll(children);
 				everyone.addAll(parents);
-				mutant1 = checkNiche(everyone, child1)?Mutate(child1) : Mutate(child1);
-				mutant2 = checkNiche(everyone, child2)?Mutate(child2) : Mutate(child2);
+				mutant1 = checkNiche(everyone, child1) ? Mutate(child1)
+						: Mutate2(child1);
+				mutant2 = checkNiche(everyone, child2) ? Mutate(child2)
+						: Mutate2(child2);
 				everyone.clear();
-			}
-			else{
+			} else {
 				mutant1 = Mutate(child1);
-				mutant2 =  Mutate(child2);
+				mutant2 = Mutate(child2);
 			}
-			
+
 			double fc1 = (Double) evaluation_.evaluate(child1);
 			double fm1 = (Double) evaluation_.evaluate(mutant1);
 
 			if (fm1 >= fc1) {
 				children.add(new Individue(mutant1, fm1));
 				succes++;
-			} else{
+			} else {
 				children.add(new Individue(child1, fc1));
 				nosucces++;
 			}
@@ -289,7 +309,7 @@ public class player13Rafael implements ContestSubmission {
 			if (fm2 >= fc2) {
 				children.add(new Individue(mutant2, fm2));
 				succes++;
-			} else{
+			} else {
 				children.add(new Individue(child2, fc2));
 				nosucces++;
 			}
@@ -301,7 +321,7 @@ public class player13Rafael implements ContestSubmission {
 		else
 			sigma -= ds;
 
-		//System.out.println(succes/nosucces);
+		// System.out.println(succes/nosucces);
 		return children;
 
 	}
@@ -311,22 +331,22 @@ public class player13Rafael implements ContestSubmission {
 		double[] child = new double[10];
 
 		for (int i = 0; i < parent1.getGen().length; i++) {
-			
+
 			// take variable random from each parent
-			if(!isSeparable){
+			if (!isSeparable) {
 				double r = rnd_.nextDouble();
-	
+
 				if (r < 0.5)
 					child[i] = parent1.getGen()[i];
 				if (r >= 0.5)
 					child[i] = parent2.getGen()[i];
 			}
-			
+
 			// take average of variables
-			if(isSeparable){
-				
-				child[i] = (parent1.getGen()[i] + parent2.getGen()[i])/2;
-				
+			if (isSeparable) {
+
+				child[i] = (parent1.getGen()[i] + parent2.getGen()[i]) / 2;
+
 			}
 
 		}
@@ -339,47 +359,45 @@ public class player13Rafael implements ContestSubmission {
 
 		// keep track of top fitness
 		top_fit = evaluation_.getFinalResult();
-		
+
 		ArrayList<Individue> newpopu = new ArrayList<Individue>(popu);
 		newpopu.addAll(children);
-		
+
 		Collections.sort(newpopu, new Comparator<Individue>() {
 
 			@Override
 			public int compare(Individue o1, Individue o2) {
-				double d = o1.getFitness()-o2.getFitness();
-				if(d<0)
+				double d = o1.getFitness() - o2.getFitness();
+				if (d < 0)
 					return -1;
-				if(d==0)
+				if (d == 0)
 					return 0;
 				else
 					return 1;
 			}
 
 		});
-		
-		/*rankPopulation(newpopu);
-		ArrayList<Double> prob = CalcProb(newpopu);
-		
-		int mu = newpopu.size();
-		for (int i = rnd_.nextInt(mu); newpopu.size() > MAX_POP; i = rnd_.nextInt(mu)){
-		
-			double fit = newpopu.get(i).getFitness();
-			double r = rnd_.nextDouble();
-			
-			if (r < prob.get(i) && fit != top_fit) {
-				
-				
-			}
-			
-			
-			mu = newpopu.size();
-		}*/
-		
-		
-		
 
-		return new ArrayList<Individue>(newpopu.subList(newpopu.size()-MAX_POP-1, newpopu.size()));
+		/*
+		 * rankPopulation(newpopu); ArrayList<Double> prob = CalcProb(newpopu);
+		 * 
+		 * int mu = newpopu.size(); for (int i = rnd_.nextInt(mu);
+		 * newpopu.size() > MAX_POP; i = rnd_.nextInt(mu)){
+		 * 
+		 * double fit = newpopu.get(i).getFitness(); double r =
+		 * rnd_.nextDouble();
+		 * 
+		 * if (r < prob.get(i) && fit != top_fit) {
+		 * 
+		 * 
+		 * }
+		 * 
+		 * 
+		 * mu = newpopu.size(); }
+		 */
+
+		return new ArrayList<Individue>(newpopu.subList(newpopu.size()
+				- MAX_POP - 1, newpopu.size()));
 	}
 
 	private double[] Mutate(double[] child) {
@@ -387,18 +405,42 @@ public class player13Rafael implements ContestSubmission {
 		double[] mutant = new double[10];
 
 		for (int i = 0; i < child.length; i++) {
-			
+
 			// 20% chance of mutation for each variable
-			if(rnd_.nextDouble() < 0.2){
+			if (rnd_.nextDouble() < 0.2) {
 				double dx = sigma * rnd_.nextGaussian();
 				mutant[i] = child[i] + dx;
-	
+
 				if (mutant[i] > 5)
 					mutant[i] = 5;
-	
+
 				if (mutant[i] < -5)
 					mutant[i] = -5;
-			}else{
+			} else {
+				mutant[i] = child[i];
+			}
+
+		}
+
+		return mutant;
+	}
+
+	private double[] Mutate2(double[] child) {
+		double[] mutant = new double[10];
+
+		for (int i = 0; i < child.length; i++) {
+
+			// 20% chance of mutation for each variable
+			if (rnd_.nextDouble() < 0.5) {
+				double dx = 2 * sigma * rnd_.nextGaussian();
+				mutant[i] = child[i] + dx;
+
+				if (mutant[i] > 5)
+					mutant[i] = 5;
+
+				if (mutant[i] < -5)
+					mutant[i] = -5;
+			} else {
 				mutant[i] = child[i];
 			}
 
@@ -413,14 +455,14 @@ public class player13Rafael implements ContestSubmission {
 		// System.out.println("end");
 
 		boolean go = true;
-		for (int evals = MAX_POP; evals < evaluations_limit_  && go; evals += 2*(MAX_POP)) {
+		for (int evals = MAX_POP; evals < evaluations_limit_ && go; evals += 2 * (MAX_POP)) {
 
 			// System.out.println("Population_List.size= "+Population_List.size());
 			ArrayList<Individue> parents = SelectParents(Population_List);
 			ArrayList<Individue> children = createChildren(parents);
 			Population_List = nextGeneration(Population_List, children);
-			
-			ds = ds_0 - (ds_0 - 0.01)*(evals/evaluations_limit_);
+
+			ds = ds_0 - (ds_0 - 0.01) * (evals / evaluations_limit_);
 
 		}
 		System.out.println("number of niches found " + numberOfNichesFound);
@@ -432,7 +474,7 @@ public class player13Rafael implements ContestSubmission {
 		player13Rafael p13 = new player13Rafael();
 
 		p13.setEvaluation(new SphereEvaluation());
-		
+
 		p13.run();
 
 	}
